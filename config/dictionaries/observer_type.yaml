@@ -1,0 +1,11 @@
+# Normalizes vendor device-role vocabulary to UES observer.type.
+_default: other
+firewall: firewall
+fw: firewall
+ids: ids
+ips: ips
+proxy: proxy
+waf: waf
+vpn: vpn
+endpoint: endpoint
+idp: idp

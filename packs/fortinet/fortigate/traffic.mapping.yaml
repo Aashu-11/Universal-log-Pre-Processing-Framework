@@ -1,0 +1,42 @@
+# Maps fortinet.fortigate.traffic's extracted fields onto UES.
+metadata:
+  parser_id: fortinet.fortigate.traffic
+  version: "1.0.0"
+
+fields:
+  event.category: { const: network }
+  event.type: { const: connection }
+  event.dataset: { const: fortinet.fortigate.traffic }
+  event.action: { from: action, dictionary: action }
+  event.outcome: { from: action, dictionary: outcome }
+  # eventtime doubles as the original-time-string source: it's the field
+  # event.observed_at is actually derived from, so "what we parsed the
+  # timestamp out of" and "what we retained verbatim" are the same value.
+  event.original_time_string: { from: eventtime }
+  event.observed_at:
+    from: eventtime
+    timestamp:
+      epoch_unit: seconds
+
+  observer.vendor: { const: fortinet }
+  observer.product: { const: fortigate }
+  observer.type: { const: firewall }
+  observer.hostname: { from: devname }
+
+  src.ip: { from: srcip }
+  src.port: { from: srcport, transform: int }
+  src.zone: { from: srcintf }
+
+  dst.ip: { from: dstip }
+  dst.port: { from: dstport, transform: int }
+  dst.zone: { from: dstintf }
+
+  network.transport: { from: proto, dictionary: protocol }
+  network.bytes_out: { from: sentbyte, transform: int }
+  network.bytes_in: { from: rcvdbyte, transform: int }
+  network.protocol: { from: service }
+  # NOTE: FortiGate's `duration` is in *seconds*, but network.duration_ms
+  # is milliseconds — deliberately left unmapped rather than silently
+  # mislabeling the unit. It still lands in `unmapped`, never discarded.
+
+unmapped_policy: retain

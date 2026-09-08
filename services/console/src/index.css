@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+/* Design tokens. Dark, dense, technical — Grafana/Datadog territory, not a
+   consumer app. System font stacks only (no Google Fonts / CDN font load):
+   the console must work fully air-gapped, so nothing here may depend on a
+   runtime network fetch. */
+@theme {
+  --font-sans: -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "Consolas", "SFMono-Regular", monospace;
+
+  --color-bg: #0a0e14;
+  --color-surface: #12161f;
+  --color-surface-hover: #171c28;
+  --color-border: #232938;
+  --color-border-strong: #313a4f;
+
+  --color-text: #e6e8ec;
+  --color-text-secondary: #8b93a7;
+  --color-text-muted: #5b6478;
+
+  --color-accent: #38bdf8;
+  --color-accent-hover: #7dd3fc;
+
+  --color-success: #34d399;
+  --color-danger: #f87171;
+  --color-warning: #fbbf24;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+code,
+pre,
+.font-mono-data {
+  font-family: var(--font-mono);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 5px;
+}

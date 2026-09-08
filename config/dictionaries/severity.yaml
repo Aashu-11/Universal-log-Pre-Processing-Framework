@@ -1,0 +1,14 @@
+# Normalizes syslog PRI severity (0=emergency..7=debug, RFC5424 table 2) to
+# UES event.severity_id (0=informational..6=emergency, schema/ues-1.0.json).
+# The two scales run in opposite directions, so this is an inversion+clamp,
+# not a straight passthrough — documented here so it isn't "fixed" by
+# accident later.
+_default: "3"
+"0": "6" # emergency   -> emergency
+"1": "6" # alert       -> emergency (UES has no separate "alert" tier)
+"2": "5" # critical    -> critical
+"3": "4" # error       -> high
+"4": "3" # warning     -> medium
+"5": "2" # notice      -> low
+"6": "1" # informational -> informational
+"7": "0" # debug       -> informational

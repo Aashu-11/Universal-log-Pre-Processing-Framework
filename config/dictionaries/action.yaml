@@ -1,0 +1,15 @@
+# Normalizes vendor action/verdict vocabulary to UES event.action.
+_default: unknown
+allow: allowed
+permit: allowed
+accept: allowed
+pass: allowed
+"0": allowed
+deny: blocked
+reject: blocked
+drop: dropped
+close: dropped
+"reset-both": reset
+"reset-client": reset
+"reset-server": reset
+"tcp-fin": closed

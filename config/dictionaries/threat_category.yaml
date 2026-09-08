@@ -1,0 +1,11 @@
+# Normalizes vendor threat/signature category vocabulary to UES
+# threat.category. Extended as more IDS/IPS-class parsers are added
+# (Phase 5+: Suricata eve.alert, Zeek notice.log).
+_default: unknown
+exploit: exploit
+malware: malware
+spyware: malware
+vulnerability: exploit
+scan: reconnaissance
+recon: reconnaissance
+dos: denial_of_service

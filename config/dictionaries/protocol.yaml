@@ -1,0 +1,9 @@
+# Normalizes IANA protocol numbers and vendor spellings to UES
+# network.transport.
+_default: unknown
+tcp: tcp
+udp: udp
+icmp: icmp
+"6": tcp
+"17": udp
+"1": icmp

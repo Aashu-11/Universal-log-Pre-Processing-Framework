@@ -1,0 +1,7 @@
+signature_id,tactic,technique_id,technique_name
+2210000,TA0001,T1190,Exploit Public-Facing Application
+2210001,TA0043,T1595,Active Scanning
+2210002,TA0011,T1071,Application Layer Protocol
+2210003,TA0040,T1499,Endpoint Denial of Service
+2210004,TA0006,T1110,Brute Force
+2210005,TA0008,T1021,Remote Services
