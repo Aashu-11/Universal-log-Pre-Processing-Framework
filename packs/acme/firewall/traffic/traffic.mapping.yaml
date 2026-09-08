@@ -1,0 +1,19 @@
+metadata:
+  parser_id: acme.firewall.traffic
+  version: 1.0.0
+fields:
+  event.category:
+    const: network
+  event.type:
+    const: connection
+  src.ip:
+    from: srcip
+  dst.ip:
+    from: dstip
+  src.port:
+    from: srcport
+    transform: int
+  dst.port:
+    from: dstport
+    transform: int
+unmapped_policy: retain

@@ -1,0 +1,251 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ulpf.dev/schema/ues-1.0.json",
+  "title": "Universal Event Schema (UES) 1.0",
+  "description": "The single normalized event shape every ULPF parser/mapping pair must produce. Namespaces map 1:1 onto the underscored Parquet/Presto column layout produced by internal/schema.Event.ToFlatRow — e.g. src.ip becomes src_ip, network.bytes_total becomes network_bytes_total. `unmapped` is the escape hatch: every extracted field that has no home elsewhere in this schema is retained there, verbatim, so normalization is provably lossless.",
+  "type": "object",
+  "required": ["event", "observer", "raw", "lineage", "quality", "unmapped"],
+  "properties": {
+    "event": {
+      "type": "object",
+      "description": "Identity, classification and timing of the normalized event itself.",
+      "required": ["id", "kind", "observed_at", "ingested_at", "dataset"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUIDv7 — time-sortable, generated at ingest.",
+          "examples": ["018f4d2e-7b1a-7c3e-9f2a-1e6b4c8d0a11"]
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["event", "alert", "metric", "state"],
+          "description": "ECS-style top-level classification of what this record represents.",
+          "examples": ["event"]
+        },
+        "category": {
+          "type": "string",
+          "description": "Broad category, e.g. network, authentication, threat, web.",
+          "examples": ["network"]
+        },
+        "type": {
+          "type": "string",
+          "description": "Sub-category within event.category.",
+          "examples": ["connection"]
+        },
+        "action": {
+          "type": "string",
+          "description": "Normalized verb, dictionary-mapped from vendor vocabulary (allow/deny/drop/etc -> allowed/blocked/dropped/reset).",
+          "examples": ["blocked"]
+        },
+        "outcome": {
+          "type": "string",
+          "enum": ["success", "failure", "unknown"],
+          "examples": ["success"]
+        },
+        "severity_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6,
+          "description": "UES normalized severity 0 (informational) .. 6 (emergency); dictionary-mapped from syslog PRI, vendor 1-10 scales, or word scales.",
+          "examples": [3]
+        },
+        "original_time_string": {
+          "type": "string",
+          "description": "The timestamp exactly as it appeared in the source event, retained verbatim even after conversion to UTC epoch-ns.",
+          "examples": ["Sep  7 14:02:11"]
+        },
+        "observed_at": {
+          "type": "integer",
+          "description": "UTC epoch nanoseconds, the device's own timestamp for when the event occurred.",
+          "examples": [1757253731000000000]
+        },
+        "ingested_at": {
+          "type": "integer",
+          "description": "UTC epoch nanoseconds when the collector received the event.",
+          "examples": [1757253731500000000]
+        },
+        "time_skew_ms": {
+          "type": "integer",
+          "description": "ingested_at - observed_at in milliseconds; large values indicate clock drift on the source device.",
+          "examples": [500]
+        },
+        "dataset": {
+          "type": "string",
+          "description": "vendor.product.event_class — the same id used as the parser id, e.g. paloalto.panos.traffic.",
+          "examples": ["paloalto.panos.traffic"]
+        }
+      }
+    },
+    "observer": {
+      "type": "object",
+      "description": "The device/software that produced the event.",
+      "required": ["vendor", "product", "type"],
+      "properties": {
+        "vendor": { "type": "string", "examples": ["paloalto"] },
+        "product": { "type": "string", "examples": ["panos"] },
+        "type": {
+          "type": "string",
+          "description": "firewall | ids | ips | proxy | waf | vpn | endpoint | idp | other.",
+          "examples": ["firewall"]
+        },
+        "hostname": { "type": "string", "examples": ["pa-edge-01"] },
+        "ip": { "type": "string", "examples": ["10.0.0.5"] },
+        "version": { "type": "string", "examples": ["10.2.3"] }
+      }
+    },
+    "src": {
+      "type": "object",
+      "description": "Source (initiator) side of the event.",
+      "properties": {
+        "ip": { "type": "string", "examples": ["203.0.113.5"] },
+        "port": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "mac": { "type": "string" },
+        "hostname": { "type": "string" },
+        "user": { "type": "string" },
+        "zone": { "type": "string", "examples": ["untrust"] }
+      }
+    },
+    "dst": {
+      "type": "object",
+      "description": "Destination (responder) side of the event.",
+      "properties": {
+        "ip": { "type": "string", "examples": ["10.0.0.10"] },
+        "port": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "mac": { "type": "string" },
+        "hostname": { "type": "string" },
+        "zone": { "type": "string", "examples": ["trust"] }
+      }
+    },
+    "network": {
+      "type": "object",
+      "properties": {
+        "transport": { "type": "string", "examples": ["tcp"] },
+        "direction": { "type": "string", "enum": ["inbound", "outbound", "internal", "unknown"] },
+        "bytes_in": { "type": "integer", "minimum": 0 },
+        "bytes_out": { "type": "integer", "minimum": 0 },
+        "bytes_total": { "type": "integer", "minimum": 0 },
+        "packets_in": { "type": "integer", "minimum": 0 },
+        "packets_out": { "type": "integer", "minimum": 0 },
+        "duration_ms": { "type": "integer", "minimum": 0 },
+        "protocol": { "type": "string", "examples": ["https"] }
+      }
+    },
+    "http": {
+      "type": "object",
+      "properties": {
+        "method": { "type": "string", "examples": ["GET"] },
+        "status_code": { "type": "integer" },
+        "user_agent": { "type": "string" }
+      }
+    },
+    "url": {
+      "type": "object",
+      "properties": {
+        "full": { "type": "string" },
+        "domain": { "type": "string" },
+        "path": { "type": "string" }
+      }
+    },
+    "dns": {
+      "type": "object",
+      "properties": {
+        "question_name": { "type": "string" },
+        "question_type": { "type": "string" },
+        "response_code": { "type": "string" }
+      }
+    },
+    "tls": {
+      "type": "object",
+      "properties": {
+        "version": { "type": "string" },
+        "sni": { "type": "string" },
+        "cipher": { "type": "string" }
+      }
+    },
+    "actor": {
+      "type": "object",
+      "description": "Human/service identity associated with the event, when distinct from src.user.",
+      "properties": {
+        "user": { "type": "string" },
+        "id": { "type": "string" }
+      }
+    },
+    "threat": {
+      "type": "object",
+      "properties": {
+        "signature_id": { "type": "string" },
+        "signature_name": { "type": "string" },
+        "category": { "type": "string" },
+        "severity": { "type": "string" },
+        "mitre_tactic": { "type": "string" },
+        "mitre_technique": { "type": "string" }
+      }
+    },
+    "enrich": {
+      "type": "object",
+      "description": "Offline-computed context. Every sub-field here is optional and independently toggleable — see internal/enrich.",
+      "properties": {
+        "src_geo_country": { "type": "string" },
+        "src_geo_city": { "type": "string" },
+        "src_asn": { "type": "integer" },
+        "src_as_org": { "type": "string" },
+        "dst_geo_country": { "type": "string" },
+        "dst_geo_city": { "type": "string" },
+        "dst_asn": { "type": "integer" },
+        "dst_as_org": { "type": "string" },
+        "src_is_internal": { "type": "boolean" },
+        "dst_is_internal": { "type": "boolean" },
+        "ioc_match": { "type": "boolean" },
+        "ioc_indicator": { "type": "string" },
+        "risk_score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "risk_factors": {
+          "type": "object",
+          "description": "Explainability: factor name -> contribution to risk_score.",
+          "additionalProperties": { "type": "number" }
+        }
+      }
+    },
+    "raw": {
+      "type": "object",
+      "description": "Pointer back to the exact original bytes in the Raw Vault. Mandatory on every event, including failed-parse events.",
+      "required": ["sha256", "segment_id", "offset", "length", "retrieval_uri"],
+      "properties": {
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "segment_id": { "type": "string" },
+        "offset": { "type": "integer", "minimum": 0 },
+        "length": { "type": "integer", "minimum": 0 },
+        "retrieval_uri": { "type": "string" }
+      }
+    },
+    "lineage": {
+      "type": "object",
+      "description": "Which parser, which version, on which node, produced this event, and how.",
+      "required": ["parser_id", "parser_version", "parse_status", "node_id"],
+      "properties": {
+        "parser_id": { "type": "string" },
+        "parser_version": { "type": "string" },
+        "parse_status": { "type": "string", "enum": ["ok", "partial", "failed"] },
+        "node_id": { "type": "string" },
+        "processing_ms": { "type": "number", "minimum": 0 }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "required": ["score"],
+      "properties": {
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "mapped_fields / expected_for_class * parse_confidence."
+        }
+      }
+    },
+    "unmapped": {
+      "type": "object",
+      "description": "Every extracted field with no UES home, verbatim key -> string value. Proves normalization never discards data.",
+      "additionalProperties": { "type": "string" }
+    }
+  }
+}

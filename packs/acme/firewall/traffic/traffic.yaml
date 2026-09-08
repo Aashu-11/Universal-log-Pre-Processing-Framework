@@ -1,0 +1,15 @@
+metadata:
+  id: acme.firewall.traffic
+  version: 1.0.0
+  vendor: acme
+  product: firewall
+  observer_type: firewall
+  event_class: traffic
+match:
+  priority: 50
+  confidence: 0.7
+  any:
+  - contains: srcip=203.0.113.5
+pipeline:
+- op: kv
+on_failure: emit_partial

@@ -1,0 +1,14 @@
+# Normalizes vendor action vocabulary to UES event.outcome.
+_default: unknown
+allow: success
+permit: success
+accept: success
+pass: success
+"0": success
+deny: failure
+reject: failure
+drop: failure
+close: failure
+"reset-both": failure
+"reset-client": failure
+"reset-server": failure

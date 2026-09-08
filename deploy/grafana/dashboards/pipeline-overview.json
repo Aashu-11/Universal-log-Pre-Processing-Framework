@@ -1,0 +1,53 @@
+{
+  "title": "ULPF Pipeline Overview",
+  "uid": "ulpf-pipeline-overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Events received / sec (by listener)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum by (listener) (rate(ulpf_events_received_total[1m]))",
+          "legendFormat": "{{listener}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "UDP drops / sec",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "rate(ulpf_udp_drops_total[1m])", "legendFormat": "drops" }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Vault write duration (p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(ulpf_vault_write_duration_seconds_bucket[1m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Spool depth",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "ulpf_spool_depth", "legendFormat": "{{listener}}" }
+      ]
+    }
+  ]
+}

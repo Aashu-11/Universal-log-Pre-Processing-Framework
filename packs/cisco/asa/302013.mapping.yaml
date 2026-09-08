@@ -1,0 +1,39 @@
+# Maps cisco.asa.302013's extracted fields onto UES. %ASA-6-302013 is
+# specifically the "connection built" message — by definition an allowed,
+# successful connection — so event.action/outcome are const, not derived
+# from a verdict field this message doesn't carry.
+metadata:
+  parser_id: cisco.asa.302013
+  version: "1.0.0"
+
+fields:
+  event.category: { const: network }
+  event.type: { const: connection }
+  event.dataset: { const: cisco.asa.302013 }
+  event.action: { const: allowed }
+  event.outcome: { const: success }
+  event.severity_id: { from: severity, dictionary: severity, transform: int }
+  event.original_time_string: { from: timestamp }
+  event.observed_at:
+    from: timestamp
+    timestamp:
+      formats: ["Jan 02 2006 15:04:05"]
+      timezone: "UTC"
+
+  observer.vendor: { const: cisco }
+  observer.product: { const: asa }
+  observer.type: { const: firewall }
+  observer.hostname: { from: hostname }
+
+  src.ip: { from: src_ip }
+  src.port: { from: src_port, transform: int }
+  src.zone: { from: src_zone }
+
+  dst.ip: { from: dst_ip }
+  dst.port: { from: dst_port, transform: int }
+  dst.zone: { from: dst_zone }
+
+  network.transport: { from: protocol, dictionary: protocol }
+  network.direction: { from: direction, dictionary: direction }
+
+unmapped_policy: retain

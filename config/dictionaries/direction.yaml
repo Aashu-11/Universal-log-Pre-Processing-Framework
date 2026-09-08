@@ -1,0 +1,7 @@
+# Normalizes vendor connection-direction vocabulary to UES network.direction.
+_default: unknown
+inbound: inbound
+outbound: outbound
+in: inbound
+out: outbound
+internal: internal

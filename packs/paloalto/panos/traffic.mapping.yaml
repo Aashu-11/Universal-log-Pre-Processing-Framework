@@ -1,0 +1,42 @@
+# Maps paloalto.panos.traffic's extracted fields onto UES. Extraction and
+# mapping are deliberately separate files — see CLAUDE.md — so this file
+# alone could be swapped for an ECS/OCSF/CEF-targeted mapping without
+# touching traffic.yaml at all.
+metadata:
+  parser_id: paloalto.panos.traffic
+  version: "1.0.0"
+
+fields:
+  event.category: { const: network }
+  event.type: { const: connection }
+  event.dataset: { const: paloalto.panos.traffic }
+  event.action: { from: action, dictionary: action }
+  event.outcome: { from: action, dictionary: outcome }
+  event.severity_id: { from: severity, dictionary: severity, transform: int }
+  event.original_time_string: { from: receive_time }
+  event.observed_at:
+    from: receive_time
+    timestamp:
+      formats: ["2006/01/02 15:04:05"]
+      timezone: "UTC"
+
+  observer.vendor: { const: paloalto }
+  observer.product: { const: panos }
+  observer.type: { const: firewall }
+  observer.hostname: { from: hostname }
+
+  src.ip: { from: src }
+  src.port: { from: src_port, transform: int }
+  src.zone: { from: from_zone }
+
+  dst.ip: { from: dst }
+  dst.port: { from: dst_port, transform: int }
+  dst.zone: { from: to_zone }
+
+  network.transport: { from: protocol, dictionary: protocol }
+  network.bytes_out: { from: bytes_sent, transform: int }
+  network.bytes_in: { from: bytes_received, transform: int }
+  network.duration_ms: { from: elapsed_time, transform: int }
+  network.protocol: { from: app }
+
+unmapped_policy: retain

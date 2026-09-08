@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+  Standalone Hive Metastore config: Postgres-backed catalog, S3A pointed at
+  MinIO. This file is the belt to SERVICE_OPTS's suspenders in
+  docker-compose.yml — SERVICE_OPTS covers the JDO connection + S3A, this
+  file covers everything the image doesn't accept as a -D system property
+  (warehouse dir, schema verification, S3A path style).
+-->
+<configuration>
+  <property>
+    <name>hive.metastore.warehouse.dir</name>
+    <value>s3a://ulpf-lake/warehouse</value>
+  </property>
+
+  <property>
+    <name>hive.metastore.schema.verification</name>
+    <value>false</value>
+  </property>
+
+  <property>
+    <name>datanucleus.autoCreateSchema</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>datanucleus.fixedDatastore</name>
+    <value>false</value>
+  </property>
+
+  <property>
+    <name>fs.s3a.impl</name>
+    <value>org.apache.hadoop.fs.s3a.S3AFileSystem</value>
+  </property>
+
+  <property>
+    <name>fs.s3a.endpoint</name>
+    <value>http://minio:9000</value>
+  </property>
+
+  <property>
+    <name>fs.s3a.path.style.access</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>fs.s3a.access.key</name>
+    <value>ulpfadmin</value>
+  </property>
+
+  <property>
+    <name>fs.s3a.secret.key</name>
+    <value>ulpf_dev_only</value>
+  </property>
+
+  <property>
+    <name>fs.s3a.connection.ssl.enabled</name>
+    <value>false</value>
+  </property>
+
+  <property>
+    <name>metastore.thrift.uris</name>
+    <value>thrift://0.0.0.0:9083</value>
+  </property>
+
+  <property>
+    <name>metastore.task.threads.always</name>
+    <value>org.apache.hadoop.hive.metastore.events.EventCleanerTask</value>
+  </property>
+</configuration>

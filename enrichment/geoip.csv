@@ -1,0 +1,219 @@
+cidr,country,city
+1.0.0.0/8,JP,Tokyo
+2.0.0.0/8,GB,London
+3.0.0.0/8,CA,Toronto
+4.0.0.0/8,CA,Toronto
+5.0.0.0/8,US,San Jose
+6.0.0.0/8,AU,Sydney
+7.0.0.0/8,US,San Jose
+8.0.0.0/8,IN,Mumbai
+9.0.0.0/8,SG,Singapore
+11.0.0.0/8,US,Ashburn
+12.0.0.0/8,DE,Frankfurt
+13.0.0.0/8,BR,Sao Paulo
+14.0.0.0/8,AU,Sydney
+15.0.0.0/8,JP,Tokyo
+16.0.0.0/8,SG,Singapore
+17.0.0.0/8,DE,Frankfurt
+18.0.0.0/8,GB,London
+19.0.0.0/8,JP,Tokyo
+20.0.0.0/8,JP,Tokyo
+21.0.0.0/8,DE,Frankfurt
+22.0.0.0/8,CA,Toronto
+23.0.0.0/8,AU,Sydney
+24.0.0.0/8,IN,Mumbai
+25.0.0.0/8,NL,Amsterdam
+26.0.0.0/8,GB,London
+27.0.0.0/8,BR,Sao Paulo
+28.0.0.0/8,BR,Sao Paulo
+29.0.0.0/8,SG,Singapore
+30.0.0.0/8,AU,Sydney
+31.0.0.0/8,GB,London
+32.0.0.0/8,US,San Jose
+33.0.0.0/8,US,Ashburn
+34.0.0.0/8,CA,Toronto
+35.0.0.0/8,CA,Toronto
+36.0.0.0/8,FR,Paris
+37.0.0.0/8,IN,Mumbai
+38.0.0.0/8,FR,Paris
+39.0.0.0/8,BR,Sao Paulo
+40.0.0.0/8,FR,Paris
+41.0.0.0/8,AU,Sydney
+42.0.0.0/8,US,San Jose
+43.0.0.0/8,NL,Amsterdam
+44.0.0.0/8,NL,Amsterdam
+45.0.0.0/8,GB,London
+46.0.0.0/8,US,San Jose
+47.0.0.0/8,GB,London
+48.0.0.0/8,NL,Amsterdam
+49.0.0.0/8,SG,Singapore
+50.0.0.0/8,BR,Sao Paulo
+51.0.0.0/8,FR,Paris
+52.0.0.0/8,FR,Paris
+53.0.0.0/8,US,San Jose
+54.0.0.0/8,FR,Paris
+55.0.0.0/8,GB,London
+56.0.0.0/8,SG,Singapore
+57.0.0.0/8,US,San Jose
+58.0.0.0/8,IN,Mumbai
+59.0.0.0/8,AU,Sydney
+60.0.0.0/8,BR,Sao Paulo
+61.0.0.0/8,CA,Toronto
+62.0.0.0/8,CA,Toronto
+63.0.0.0/8,AU,Sydney
+64.0.0.0/8,FR,Paris
+65.0.0.0/8,US,Ashburn
+66.0.0.0/8,NL,Amsterdam
+67.0.0.0/8,IN,Mumbai
+68.0.0.0/8,JP,Tokyo
+69.0.0.0/8,DE,Frankfurt
+70.0.0.0/8,CA,Toronto
+71.0.0.0/8,DE,Frankfurt
+72.0.0.0/8,BR,Sao Paulo
+73.0.0.0/8,US,Ashburn
+74.0.0.0/8,DE,Frankfurt
+75.0.0.0/8,DE,Frankfurt
+76.0.0.0/8,GB,London
+77.0.0.0/8,AU,Sydney
+78.0.0.0/8,US,San Jose
+79.0.0.0/8,BR,Sao Paulo
+80.0.0.0/8,SG,Singapore
+81.0.0.0/8,IN,Mumbai
+82.0.0.0/8,GB,London
+83.0.0.0/8,FR,Paris
+84.0.0.0/8,US,San Jose
+85.0.0.0/8,US,San Jose
+86.0.0.0/8,JP,Tokyo
+87.0.0.0/8,BR,Sao Paulo
+88.0.0.0/8,JP,Tokyo
+89.0.0.0/8,CA,Toronto
+90.0.0.0/8,CA,Toronto
+91.0.0.0/8,NL,Amsterdam
+92.0.0.0/8,DE,Frankfurt
+93.0.0.0/8,SG,Singapore
+94.0.0.0/8,AU,Sydney
+95.0.0.0/8,BR,Sao Paulo
+96.0.0.0/8,US,Ashburn
+97.0.0.0/8,BR,Sao Paulo
+98.0.0.0/8,US,Ashburn
+99.0.0.0/8,GB,London
+100.0.0.0/8,US,San Jose
+101.0.0.0/8,DE,Frankfurt
+102.0.0.0/8,FR,Paris
+103.0.0.0/8,BR,Sao Paulo
+104.0.0.0/8,GB,London
+105.0.0.0/8,JP,Tokyo
+106.0.0.0/8,CA,Toronto
+107.0.0.0/8,DE,Frankfurt
+108.0.0.0/8,NL,Amsterdam
+109.0.0.0/8,US,San Jose
+110.0.0.0/8,AU,Sydney
+111.0.0.0/8,SG,Singapore
+112.0.0.0/8,AU,Sydney
+113.0.0.0/8,US,San Jose
+114.0.0.0/8,BR,Sao Paulo
+115.0.0.0/8,DE,Frankfurt
+116.0.0.0/8,US,Ashburn
+117.0.0.0/8,US,San Jose
+118.0.0.0/8,CA,Toronto
+119.0.0.0/8,US,San Jose
+120.0.0.0/8,GB,London
+121.0.0.0/8,AU,Sydney
+122.0.0.0/8,DE,Frankfurt
+123.0.0.0/8,NL,Amsterdam
+124.0.0.0/8,FR,Paris
+125.0.0.0/8,GB,London
+126.0.0.0/8,NL,Amsterdam
+128.0.0.0/8,AU,Sydney
+129.0.0.0/8,JP,Tokyo
+130.0.0.0/8,NL,Amsterdam
+131.0.0.0/8,BR,Sao Paulo
+132.0.0.0/8,FR,Paris
+133.0.0.0/8,US,Ashburn
+134.0.0.0/8,GB,London
+135.0.0.0/8,US,San Jose
+136.0.0.0/8,DE,Frankfurt
+137.0.0.0/8,GB,London
+138.0.0.0/8,US,San Jose
+139.0.0.0/8,IN,Mumbai
+140.0.0.0/8,DE,Frankfurt
+141.0.0.0/8,US,Ashburn
+142.0.0.0/8,GB,London
+143.0.0.0/8,US,Ashburn
+144.0.0.0/8,CA,Toronto
+145.0.0.0/8,SG,Singapore
+146.0.0.0/8,SG,Singapore
+147.0.0.0/8,IN,Mumbai
+148.0.0.0/8,CA,Toronto
+149.0.0.0/8,IN,Mumbai
+150.0.0.0/8,DE,Frankfurt
+151.0.0.0/8,CA,Toronto
+152.0.0.0/8,IN,Mumbai
+153.0.0.0/8,SG,Singapore
+154.0.0.0/8,BR,Sao Paulo
+155.0.0.0/8,SG,Singapore
+156.0.0.0/8,SG,Singapore
+157.0.0.0/8,JP,Tokyo
+158.0.0.0/8,BR,Sao Paulo
+159.0.0.0/8,FR,Paris
+160.0.0.0/8,AU,Sydney
+161.0.0.0/8,NL,Amsterdam
+162.0.0.0/8,DE,Frankfurt
+163.0.0.0/8,BR,Sao Paulo
+164.0.0.0/8,GB,London
+165.0.0.0/8,NL,Amsterdam
+166.0.0.0/8,AU,Sydney
+167.0.0.0/8,AU,Sydney
+168.0.0.0/8,GB,London
+170.0.0.0/8,AU,Sydney
+171.0.0.0/8,US,Ashburn
+173.0.0.0/8,GB,London
+174.0.0.0/8,SG,Singapore
+175.0.0.0/8,AU,Sydney
+176.0.0.0/8,AU,Sydney
+177.0.0.0/8,CA,Toronto
+178.0.0.0/8,US,Ashburn
+179.0.0.0/8,IN,Mumbai
+180.0.0.0/8,NL,Amsterdam
+181.0.0.0/8,US,San Jose
+182.0.0.0/8,GB,London
+183.0.0.0/8,GB,London
+184.0.0.0/8,CA,Toronto
+185.0.0.0/8,NL,Amsterdam
+186.0.0.0/8,FR,Paris
+187.0.0.0/8,SG,Singapore
+188.0.0.0/8,GB,London
+189.0.0.0/8,IN,Mumbai
+190.0.0.0/8,GB,London
+191.0.0.0/8,AU,Sydney
+193.0.0.0/8,US,Ashburn
+194.0.0.0/8,BR,Sao Paulo
+195.0.0.0/8,NL,Amsterdam
+196.0.0.0/8,JP,Tokyo
+197.0.0.0/8,DE,Frankfurt
+198.0.0.0/8,JP,Tokyo
+199.0.0.0/8,US,Ashburn
+200.0.0.0/8,US,Ashburn
+201.0.0.0/8,SG,Singapore
+202.0.0.0/8,CA,Toronto
+203.0.0.0/8,AU,Sydney
+204.0.0.0/8,IN,Mumbai
+205.0.0.0/8,IN,Mumbai
+206.0.0.0/8,FR,Paris
+207.0.0.0/8,US,Ashburn
+208.0.0.0/8,CA,Toronto
+209.0.0.0/8,US,San Jose
+210.0.0.0/8,DE,Frankfurt
+211.0.0.0/8,IN,Mumbai
+212.0.0.0/8,CA,Toronto
+213.0.0.0/8,AU,Sydney
+214.0.0.0/8,BR,Sao Paulo
+215.0.0.0/8,US,Ashburn
+216.0.0.0/8,SG,Singapore
+217.0.0.0/8,GB,London
+218.0.0.0/8,CA,Toronto
+219.0.0.0/8,US,Ashburn
+220.0.0.0/8,NL,Amsterdam
+221.0.0.0/8,US,Ashburn
+222.0.0.0/8,BR,Sao Paulo
+223.0.0.0/8,CA,Toronto
