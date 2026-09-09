@@ -1,4 +1,4 @@
-# ULPF — Universal Log Pre-processing Framework
+# LogKrama — Universal Log Pre-processing Framework
 
 > **Ingest anything. Lose nothing. Prove everything. Onboard a new source in minutes.**
 
@@ -33,9 +33,6 @@ them entirely offline, and exposes raw bytes, normalized events, live streams an
 - [Usage](#usage)
 - [Project Structure](#project-structure)
 - [Screenshots / Demo](#screenshots--demo)
-- [Verification Status](#verification-status)
-- [Future Improvements](#future-improvements)
-- [License](#license)
 
 ---
 
