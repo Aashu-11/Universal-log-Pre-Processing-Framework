@@ -39,12 +39,34 @@ type scanState struct {
 }
 
 type Generator struct {
-	rng  *rand.Rand
-	scan scanState
+	rng           *rand.Rand
+	scan          scanState
+	malformedRate float64
 }
 
 func NewGenerator(seed int64) *Generator {
 	return &Generator{rng: rand.New(rand.NewSource(seed))}
+}
+
+// SetMalformedRate arms a fraction (0-1) of generated events to carry a
+// genuinely out-of-spec field — an out-of-range port or an invalid dotted
+// IP — instead of anomaly-free traffic. This is not simulated failure: the
+// bad value sits in an otherwise real, syntactically valid vendor log line,
+// so it flows through the real parser (which just extracts whatever digits
+// sit in the port/IP position) and is only caught downstream by
+// internal/validate's real range/parse checks, landing in DLQ (or not) for
+// the exact same reason a real misconfigured device's garbled log would.
+func (g *Generator) SetMalformedRate(r float64) { g.malformedRate = r }
+
+// badPort returns a value guaranteed outside 0-65535 — a corrupted or
+// miscounted port field, or a NAT/proxy artifact a real device might emit.
+func (g *Generator) badPort() int { return 65536 + g.rng.Intn(200000) }
+
+// badIP returns a string that's syntactically IP-shaped (four dot-separated
+// groups any regex/dissect pattern happily extracts) but numerically
+// invalid — net.ParseIP correctly rejects it downstream in VALIDATE.
+func (g *Generator) badIP() string {
+	return fmt.Sprintf("%d.%d.%d.%d", 256+g.rng.Intn(200), g.rng.Intn(255), g.rng.Intn(255), g.rng.Intn(255))
 }
 
 func (g *Generator) randIP(private bool) string {
@@ -88,6 +110,12 @@ func (g *Generator) Line(v Vendor, now time.Time) string {
 		return g.fortinetTraffic(now)
 	case VendorCiscoASA:
 		return g.ciscoASA302013(now)
+	case VendorSonicWall:
+		// Selectable explicitly (--vendors=sonicwall) once the onboarding
+		// demo has actually published a parser for it — never included in
+		// AllVendors, so it stays a genuinely never-seen shape for the next
+		// person who runs the onboarding flow fresh.
+		return g.SonicWallTraffic(now)
 	default:
 		return g.paloAltoTraffic(now)
 	}
@@ -115,7 +143,22 @@ func (g *Generator) srcDstPort() (srcIP, dstIP string, srcPort, dstPort int) {
 		return sIP, dIP, g.randPort(), port
 	}
 	commonPorts := []int{443, 443, 443, 80, 22, 53, 3389, 8443}
-	return g.randIP(false), g.randIP(true), g.randPort(), commonPorts[g.rng.Intn(len(commonPorts))]
+	srcIP, dstIP = g.randIP(false), g.randIP(true)
+	srcPort, dstPort = g.randPort(), commonPorts[g.rng.Intn(len(commonPorts))]
+
+	if g.malformedRate > 0 && g.rng.Float64() < g.malformedRate {
+		switch g.rng.Intn(4) {
+		case 0:
+			srcPort = g.badPort()
+		case 1:
+			dstPort = g.badPort()
+		case 2:
+			srcIP = g.badIP()
+		case 3:
+			dstIP = g.badIP()
+		}
+	}
+	return srcIP, dstIP, srcPort, dstPort
 }
 
 // paloAltoTraffic emits a PAN-OS style TRAFFIC log: syslog header + a CSV

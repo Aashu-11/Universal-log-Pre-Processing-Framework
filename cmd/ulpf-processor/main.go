@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -119,7 +120,7 @@ func run(metricsAddr string) error {
 	readRetryDeadline := time.Duration(envInt64("ULPF_VAULT_READ_RETRY_SECONDS", 330)) * time.Second
 
 	errCh := make(chan error, 4)
-	go func() { errCh <- consumeLoop(ctx, reader, v, proc, readRetryDeadline) }()
+	go func() { errCh <- consumeLoop(ctx, reader, v, proc, readRetryDeadline, newMissingSegmentCache()) }()
 
 	metricsMux := http.NewServeMux()
 	metricsMux.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
@@ -143,7 +144,7 @@ func run(metricsAddr string) error {
 	}
 }
 
-func consumeLoop(ctx context.Context, reader *kg.Reader, v *vault.Vault, proc *processor.Processor, readRetryDeadline time.Duration) error {
+func consumeLoop(ctx context.Context, reader *kg.Reader, v *vault.Vault, proc *processor.Processor, readRetryDeadline time.Duration, missing *missingSegmentCache) error {
 	for {
 		msg, err := reader.ReadMessage(ctx)
 		if err != nil {
@@ -159,9 +160,21 @@ func consumeLoop(ctx context.Context, reader *kg.Reader, v *vault.Vault, proc *p
 			continue
 		}
 
+		if missing.has(rr.Ref.SegmentID) {
+			// Already proved, for a sibling event, that this segment never
+			// sealed — a real, permanently missing segment (e.g. orphaned by
+			// an ungraceful collector restart, see docs/DECISIONS.md D-007)
+			// doesn't become readable later. Paying the full readRetryDeadline
+			// again per event would mean a batch of N events referencing the
+			// same lost segment costs N*deadline serially — hours, for a
+			// batch that size in practice — instead of one.
+			continue
+		}
+
 		raw, err := readWithRetry(ctx, v, rr.Ref, readRetryDeadline)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "ulpf-processor: vault read failed for %s after retries: %v\n", rr.EventID, err)
+			missing.add(rr.Ref.SegmentID)
 			continue
 		}
 
@@ -170,6 +183,35 @@ func consumeLoop(ctx context.Context, reader *kg.Reader, v *vault.Vault, proc *p
 			fmt.Fprintf(os.Stderr, "ulpf-processor: process failed for %s: %v\n", rr.EventID, err)
 		}
 	}
+}
+
+// missingSegmentCache remembers segment IDs a full readRetryDeadline has
+// already been spent on with no result, for the lifetime of this process.
+// Safe to cache permanently (never expired) because the only way v.Read
+// keeps failing past the full deadline is a segment that was never sealed
+// and never will be — a segment still in the process of sealing succeeds
+// well within one deadline window, per the invariant readRetryDeadline is
+// configured to (comfortably exceed the collector's own seal window).
+type missingSegmentCache struct {
+	mu sync.Mutex
+	m  map[string]struct{}
+}
+
+func newMissingSegmentCache() *missingSegmentCache {
+	return &missingSegmentCache{m: make(map[string]struct{})}
+}
+
+func (c *missingSegmentCache) has(segmentID string) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	_, ok := c.m[segmentID]
+	return ok
+}
+
+func (c *missingSegmentCache) add(segmentID string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.m[segmentID] = struct{}{}
 }
 
 // readWithRetry absorbs the eventual-consistency window between "collector

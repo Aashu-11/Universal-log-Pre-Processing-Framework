@@ -1,8 +1,9 @@
-# Multi-stage build for the Go data plane. One image, three binaries — the
-# same source tree cmd/ulpf-collector, cmd/ulpf-processor and cmd/ulpfctl
-# already share (schema, vault, parse, normalize, enrich packages), so one
-# build stage compiling all three avoids three separate dependency-download
-# layers. TARGET selects which binary the final stage's ENTRYPOINT runs.
+# Multi-stage build for the Go data plane. One image, four binaries — the
+# same source tree cmd/ulpf-collector, cmd/ulpf-processor, cmd/ulpfctl and
+# cmd/ulpf-dlq-bridge already share (schema, vault, parse, normalize,
+# enrich packages), so one build stage compiling all of them avoids
+# separate dependency-download layers. docker-compose.yml's `command:`
+# picks which binary each service actually runs.
 FROM golang:1.23-alpine AS build
 WORKDIR /src
 RUN apk add --no-cache git
@@ -17,12 +18,13 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o /out/ulpf-collector ./cmd/ulpf-collector \
  && CGO_ENABLED=0 GOOS=linux go build -o /out/ulpf-processor ./cmd/ulpf-processor \
- && CGO_ENABLED=0 GOOS=linux go build -o /out/ulpfctl ./cmd/ulpfctl
+ && CGO_ENABLED=0 GOOS=linux go build -o /out/ulpfctl ./cmd/ulpfctl \
+ && CGO_ENABLED=0 GOOS=linux go build -o /out/ulpf-dlq-bridge ./cmd/ulpf-dlq-bridge
 
 FROM alpine:3.20
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
-COPY --from=build /out/ulpf-collector /out/ulpf-processor /out/ulpfctl /app/
+COPY --from=build /out/ulpf-collector /out/ulpf-processor /out/ulpfctl /out/ulpf-dlq-bridge /app/
 # packs/ (parser YAML), config/dictionaries/, enrichment/ are mounted as
 # volumes in docker-compose.yml, not baked in — parsers are data, hot-
 # swapped at runtime per CLAUDE.md, and rebuilding this image to publish a

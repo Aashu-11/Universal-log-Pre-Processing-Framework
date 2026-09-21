@@ -5,6 +5,7 @@ package route
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/ulpf/ulpf/internal/schema"
 	"github.com/ulpf/ulpf/internal/sink"
@@ -39,15 +40,32 @@ func (r *Router) Route(ctx context.Context, e *schema.Event, res validate.Result
 	if len(res.Violations) == 0 {
 		return nil
 	}
-	for _, v := range res.Violations {
+	reasons := make([]string, len(res.Violations))
+	messages := make([]string, len(res.Violations))
+	for i, v := range res.Violations {
+		reasons[i] = v.Reason
+		messages[i] = v.Message
 		if r.Metrics != nil {
 			r.Metrics.DLQTotal.WithLabelValues(v.Reason).Inc()
 		}
 	}
 	if r.DLQ != nil {
-		if err := r.DLQ.Write(ctx, e); err != nil {
+		if dlqSink, ok := r.DLQ.(DLQSink); ok {
+			if err := dlqSink.WriteDLQ(ctx, e, reasons, strings.Join(messages, "; ")); err != nil {
+				return fmt.Errorf("route: dlq: %w", err)
+			}
+		} else if err := r.DLQ.Write(ctx, e); err != nil {
 			return fmt.Errorf("route: dlq: %w", err)
 		}
 	}
 	return nil
+}
+
+// DLQSink is an optional capability a DLQ sink can implement to receive an
+// event's violation reasons alongside it — the plain sink.Sink interface
+// (Write(ctx, *Event)) has nowhere to carry that, so without this a DLQ
+// entry would be indistinguishable from a normal lake/stream copy once it
+// left this function.
+type DLQSink interface {
+	WriteDLQ(ctx context.Context, e *schema.Event, reasons []string, detail string) error
 }

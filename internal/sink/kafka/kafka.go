@@ -69,6 +69,33 @@ func (s *Sink) Write(ctx context.Context, e *schema.Event) error {
 	return nil
 }
 
+// DLQMessage is what actually lands on the DLQ topic — FlatRow plus why.
+// Route.Route knows every validate.Violation an event triggered but the
+// plain Sink interface has nowhere to carry that; without this the DLQ
+// topic held the same JSON as the lake/stream copies with the one thing
+// that makes it a DLQ entry — the reason — silently dropped.
+type DLQMessage struct {
+	schema.FlatRow
+	DLQReasons []string `json:"dlq_reasons"`
+	DLQDetail  string   `json:"dlq_detail"`
+}
+
+// WriteDLQ satisfies route.DLQSink — an optional capability route.Router
+// type-asserts for so a DLQ-routed event carries its violation reasons,
+// while ordinary lake/stream sinks are untouched by this at all.
+func (s *Sink) WriteDLQ(ctx context.Context, e *schema.Event, reasons []string, detail string) error {
+	msg := DLQMessage{FlatRow: e.ToFlatRow(), DLQReasons: reasons, DLQDetail: detail}
+	b, err := json.Marshal(msg)
+	if err != nil {
+		return fmt.Errorf("kafka sink: marshal dlq %s: %w", e.Event.ID, err)
+	}
+	kmsg := kg.Message{Key: []byte(e.Event.ID), Value: b}
+	if err := s.prod.WriteMessages(ctx, kmsg); err != nil {
+		return fmt.Errorf("kafka sink: write dlq %s: %w", e.Event.ID, err)
+	}
+	return nil
+}
+
 // Flush is a no-op beyond what WriteMessages already guarantees
 // (RequiredAcks: All means every successful Write call already returned
 // only after the broker acknowledged it) — kept to satisfy the Sink

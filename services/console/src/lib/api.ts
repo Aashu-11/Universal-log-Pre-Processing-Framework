@@ -13,6 +13,8 @@ export class ApiError extends Error {
 
 let authToken: string | null = localStorage.getItem("ulpf_token");
 
+export const AUTH_EXPIRED_EVENT = "ulpf:auth-expired";
+
 export function setAuthToken(token: string | null): void {
   authToken = token;
   if (token) {
@@ -47,6 +49,14 @@ async function request<T>(baseUrl: string, path: string, init?: RequestInit): Pr
       if (body.detail) detail = body.detail;
     } catch {
       // response wasn't JSON — keep statusText
+    }
+
+    // A JWT can become invalid when it expires or when the control-plane is
+    // recreated with a different signing secret. Do not leave the UI looking
+    // authenticated while every protected request fails with "invalid token".
+    if (resp.status === 401 && authToken && path !== "/v1/auth/login") {
+      setAuthToken(null);
+      window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT, { detail }));
     }
     throw new ApiError(resp.status, detail);
   }

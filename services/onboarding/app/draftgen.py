@@ -67,8 +67,19 @@ def _plan_field(name: str, values: list[str], repo_root: str) -> FieldPlan:
     return fp
 
 
-def _build_mapping_fields(plans: list[FieldPlan]) -> dict:
+def _build_mapping_fields(plans: list[FieldPlan], vendor: str, product: str) -> dict:
+    # observer.vendor/product/type are known at onboarding time regardless
+    # of whether the raw log has a literal field for them — most vendors
+    # never emit a field literally named "vendor" or "product". Without
+    # these as const literals here, every auto-onboarded source silently
+    # writes observer.vendor="" (found live: a real onboarded SonicWall
+    # parser produced working, "ok"-status events that were then
+    # unfindable by vendor because this was missing — not a query bug,
+    # a draft-generation gap affecting every future onboarded source).
     out = {
+        "observer.vendor": {"const": vendor},
+        "observer.product": {"const": product},
+        "observer.type": {"const": "firewall"},
         "event.category": {"const": "network"},
         "event.type": {"const": "connection"},
     }
@@ -172,7 +183,7 @@ def _generate_json_draft(
     }
     mapping_doc = {
         "metadata": _base_mapping_metadata(parser_id),
-        "fields": _build_mapping_fields(plans),
+        "fields": _build_mapping_fields(plans, vendor, product),
         "unmapped_policy": "retain",
     }
     return DraftResult("json", _dump(parser_doc), _dump(mapping_doc), plans)
@@ -202,7 +213,7 @@ def _generate_kv_draft(
     }
     mapping_doc = {
         "metadata": _base_mapping_metadata(parser_id),
-        "fields": _build_mapping_fields(plans),
+        "fields": _build_mapping_fields(plans, vendor, product),
         "unmapped_policy": "retain",
     }
     return DraftResult("kv", _dump(parser_doc), _dump(mapping_doc), plans)
@@ -236,7 +247,7 @@ def _generate_csv_draft(
     }
     mapping_doc = {
         "metadata": _base_mapping_metadata(parser_id),
-        "fields": _build_mapping_fields(plans),
+        "fields": _build_mapping_fields(plans, vendor, product),
         "unmapped_policy": "retain",
     }
     return DraftResult("csv", _dump(parser_doc), _dump(mapping_doc), plans)
@@ -281,7 +292,7 @@ def _generate_dissect_draft(
     }
     mapping_doc = {
         "metadata": _base_mapping_metadata(parser_id),
-        "fields": _build_mapping_fields(plans),
+        "fields": _build_mapping_fields(plans, vendor, product),
         "unmapped_policy": "retain",
     }
     return DraftResult("dissect", _dump(parser_doc), _dump(mapping_doc), plans)

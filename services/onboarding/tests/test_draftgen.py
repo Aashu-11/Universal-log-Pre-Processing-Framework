@@ -59,6 +59,33 @@ def test_mapping_fields_include_dictionary_for_verdict():
     assert action_field["dictionary"] == "action"
 
 
+def test_mapping_sets_observer_vendor_and_product_for_every_shape():
+    """Regression test for a real bug found onboarding SonicWall live: the
+    draft mapping never set observer.vendor/observer.product as const
+    literals, so every auto-onboarded source silently produced events with
+    observer_vendor="" — the parser genuinely worked (parse_status=ok,
+    100% field coverage) but its events were then unfindable by vendor in
+    the lake, since nothing in a typical raw log literally contains a field
+    named "vendor". vendor/product are known at onboarding-request time
+    regardless of the raw log's shape, for every one of json/kv/csv/dissect.
+    """
+    cases = [
+        (['{"a": "1", "b": "2"}'] * 5, "json"),
+        (["srcip=1.2.3.4 action=allow"] * 5, "kv"),
+        (["1,2,3"] * 5, "csv"),
+        ([f"connection {i} established" for i in range(10)], "dissect"),
+    ]
+    for lines, expected_shape in cases:
+        draft = generate_draft(
+            lines, f"acme.{expected_shape}.demo", "acme", "widget", "traffic", REPO_ROOT, ""
+        )
+        assert draft.shape == expected_shape
+        mapping_doc = yaml.safe_load(draft.mapping_yaml)
+        assert mapping_doc["fields"]["observer.vendor"] == {"const": "acme"}, expected_shape
+        assert mapping_doc["fields"]["observer.product"] == {"const": "widget"}, expected_shape
+        assert mapping_doc["fields"]["observer.type"] == {"const": "firewall"}, expected_shape
+
+
 def test_generated_yaml_is_valid_yaml_for_all_shapes():
     for lines, expected_shape in [
         (['{"a": "1"}'] * 5, "json"),

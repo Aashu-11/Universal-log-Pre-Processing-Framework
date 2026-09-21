@@ -1,0 +1,15 @@
+metadata:
+  id: sonicwall.firewall.traffic
+  version: 1.0.0
+  vendor: sonicwall
+  product: firewall
+  observer_type: firewall
+  event_class: traffic
+match:
+  priority: 50
+  confidence: 0.7
+  any:
+  - contains: <134>id=firewall
+pipeline:
+- op: kv
+on_failure: emit_partial

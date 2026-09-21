@@ -8,21 +8,24 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/ulpf/ulpf/internal/loggen"
 )
 
 func main() {
-	vendorsFlag := flag.String("vendors", "all", "comma-separated vendors (paloalto,fortinet,cisco) or 'all'")
+	vendorsFlag := flag.String("vendors", "all", "comma-separated vendors (paloalto,fortinet,cisco,sonicwall) or 'all' (sonicwall is never included in 'all' — select it explicitly once its parser is published)")
 	eps := flag.Int("eps", 1000, "target events per second")
-	duration := flag.Duration("duration", 30*time.Second, "how long to run")
+	duration := flag.Duration("duration", 30*time.Second, "how long to run; 0 (or any value <= 0) runs forever until interrupted (Ctrl+C / SIGTERM) — for keeping a demo continuously fed")
 	proto := flag.String("proto", "udp", "udp | tcp | http")
 	host := flag.String("host", "127.0.0.1", "collector host")
 	port := flag.Int("port", 5514, "collector port (5514 udp/tcp default, 8088 for http)")
 	anomaly := flag.String("anomaly", "none", "none | port-scan")
+	malformedRate := flag.Float64("malformed-rate", 0, "fraction (0-1) of events with a genuinely out-of-spec port or IP, for exercising real VALIDATE/DLQ failures")
 	seed := flag.Int64("seed", time.Now().UnixNano(), "PRNG seed")
 	flag.Parse()
 
@@ -59,9 +62,10 @@ func main() {
 	if *anomaly == "port-scan" {
 		gen.StartPortScan(500)
 	}
+	gen.SetMalformedRate(*malformedRate)
 
-	fmt.Printf("loggen: vendors=%v eps=%d duration=%s proto=%s target=%s anomaly=%s\n",
-		vendors, *eps, *duration, *proto, addr, *anomaly)
+	fmt.Printf("loggen: vendors=%v eps=%d duration=%s proto=%s target=%s anomaly=%s malformed-rate=%.3f\n",
+		vendors, *eps, *duration, *proto, addr, *anomaly, *malformedRate)
 
 	// Pace by wall-clock deficit rather than one OS timer tick per event:
 	// at *eps above a few thousand, a per-event time.Ticker is limited by
@@ -79,7 +83,19 @@ func main() {
 	statusTicker := time.NewTicker(1 * time.Second)
 	defer statusTicker.Stop()
 
-	deadline := time.After(*duration)
+	// A nil channel blocks forever in a select, so a non-positive duration
+	// (the documented "run forever" sentinel) simply never fires this case
+	// — the only way out is then the signal handler below.
+	var deadline <-chan time.Time
+	if *duration > 0 {
+		deadline = time.After(*duration)
+	} else {
+		fmt.Println("loggen: running continuously — stop with Ctrl+C or SIGTERM")
+	}
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+
 	start := time.Now()
 	i := 0
 	targetSent := 0
@@ -88,6 +104,9 @@ loop:
 	for {
 		select {
 		case <-deadline:
+			break loop
+		case <-sigCh:
+			fmt.Println("loggen: stopping (signal received)")
 			break loop
 		case <-statusTicker.C:
 			elapsed := time.Since(start).Seconds()
@@ -124,6 +143,11 @@ func parseVendors(s string) []loggen.Vendor {
 			out = append(out, loggen.VendorFortinet)
 		case loggen.VendorCiscoASA:
 			out = append(out, loggen.VendorCiscoASA)
+		case loggen.VendorSonicWall:
+			// Not included in "all" — see internal/loggen.Vendor's doc
+			// comment — but explicitly selectable once a parser for it has
+			// actually been published (the onboarding demo's job).
+			out = append(out, loggen.VendorSonicWall)
 		}
 	}
 	return out

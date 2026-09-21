@@ -142,7 +142,7 @@ export function ReviewerMode() {
       key: "c",
       title: "(c) Common taxonomy",
       description: "Runs Q1 (cross-vendor unified visibility) live against Presto.",
-      action: () => runQueryProof("c", "SELECT observer_vendor, event_action, count(*) AS events FROM lake.ulpf.events WHERE dt = current_date GROUP BY 1,2 ORDER BY events DESC"),
+      action: () => runQueryProof("c", "SELECT observer_vendor, event_action, count(*) AS events FROM lake.ulpf.events WHERE dt = CAST(current_date AS varchar) GROUP BY 1,2 ORDER BY events DESC"),
     },
     {
       key: "d",
@@ -164,7 +164,7 @@ export function ReviewerMode() {
       action: () =>
         runQueryProof(
           "f",
-          "SELECT 'live' AS tier, src_ip, count(*) FROM stream.ulpf.events_normalized GROUP BY 1,2 UNION ALL SELECT 'historical', src_ip, count(*) FROM lake.ulpf.events WHERE dt = current_date GROUP BY 1,2",
+          "SELECT 'live' AS tier, src_ip, count(*) FROM stream.ulpf.events_normalized GROUP BY 1,2 UNION ALL SELECT 'historical', src_ip, count(*) FROM lake.ulpf.events WHERE dt = CAST(current_date AS varchar) GROUP BY 1,2",
         ),
     },
     {
@@ -180,7 +180,7 @@ export function ReviewerMode() {
       action: () =>
         runQueryProof(
           "h",
-          "SELECT src_ip, count(DISTINCT dst_ip) AS distinct_dsts, count(DISTINCT dst_port) AS distinct_ports FROM lake.ulpf.events WHERE dt = current_date GROUP BY 1",
+          "SELECT src_ip, count(DISTINCT dst_ip) AS distinct_dsts, count(DISTINCT dst_port) AS distinct_ports FROM lake.ulpf.events WHERE dt = CAST(current_date AS varchar) GROUP BY 1",
         ),
     },
     {

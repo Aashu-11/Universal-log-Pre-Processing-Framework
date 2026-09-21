@@ -30,8 +30,12 @@ export function Traceability() {
       setRecent(await fetchRecentEvents(15));
     } catch (err) {
       setRecentError(
-        err instanceof ApiError
-          ? `Presto unreachable: ${err.message} — pick an event manually below instead`
+        err instanceof ApiError && err.status === 502
+          ? `Presto query unavailable: ${err.message} — you can enter a raw reference manually below`
+          : err instanceof ApiError && err.status === 0
+            ? `Control plane unreachable: ${err.message}`
+            : err instanceof ApiError
+              ? `Could not load recent events: ${err.message}`
           : "could not load recent events",
       );
     } finally {

@@ -77,3 +77,53 @@ func TestReadWithRetryRespectsCallerDeadline(t *testing.T) {
 		t.Errorf("readWithRetry took %v, way past its %v deadline", elapsed, deadline)
 	}
 }
+
+// TestMissingSegmentCacheAvoidsRepeatedFullDeadlineWaits is a regression
+// test for a real, severe throughput bug found live: a batch of many
+// events referencing the same permanently-orphaned segment (e.g. from an
+// ungraceful collector restart, D-007) each independently paid the full
+// readRetryDeadline before giving up — confirmed live at 364 events
+// referencing one lost segment in a single Kafka partition, which at the
+// production-appropriate 330s deadline is over 33 hours of pure serial
+// waiting for that one partition alone. The fix: once a segment has been
+// proven missing for one event, every other event referencing the same
+// segment must fail immediately, not re-pay the deadline.
+func TestMissingSegmentCacheAvoidsRepeatedFullDeadlineWaits(t *testing.T) {
+	dir := t.TempDir()
+	st, err := store.NewLocal(dir)
+	if err != nil {
+		t.Fatalf("store: %v", err)
+	}
+	v := vault.New(st, vault.Config{NodeID: "test"})
+	missing := newMissingSegmentCache()
+
+	lostRef := vault.RawRef{SegmentID: "orphaned-segment", Offset: 0, Length: 5, SHA256: "deadbeef"}
+	deadline := 300 * time.Millisecond
+
+	// Event 1: pays the full deadline, same as today, then gets cached.
+	start := time.Now()
+	if !missing.has(lostRef.SegmentID) {
+		if _, err := readWithRetry(context.Background(), v, lostRef, deadline); err == nil {
+			t.Fatal("expected error for a segment that will never exist")
+		}
+		missing.add(lostRef.SegmentID)
+	}
+	firstElapsed := time.Since(start)
+	if firstElapsed < deadline {
+		t.Fatalf("first lookup returned in %v, want it to have paid the %v deadline", firstElapsed, deadline)
+	}
+
+	// Events 2-20: same segment, must all be near-instant via the cache —
+	// simulating the rest of a batch referencing the same lost segment.
+	start = time.Now()
+	for i := 0; i < 19; i++ {
+		if missing.has(lostRef.SegmentID) {
+			continue // this is the fix: skip straight past, no readWithRetry call
+		}
+		t.Fatal("cache miss for a segment already proven missing")
+	}
+	restElapsed := time.Since(start)
+	if restElapsed > 50*time.Millisecond {
+		t.Fatalf("19 cached lookups took %v, want near-instant (no repeated deadline waits)", restElapsed)
+	}
+}

@@ -1,0 +1,17 @@
+metadata:
+  parser_id: sonicwall.firewall.traffic
+  version: 1.0.0
+fields:
+  observer.vendor:
+    const: sonicwall
+  observer.product:
+    const: firewall
+  observer.type:
+    const: firewall
+  event.category:
+    const: network
+  event.type:
+    const: connection
+  src.ip:
+    from: fw
+unmapped_policy: retain

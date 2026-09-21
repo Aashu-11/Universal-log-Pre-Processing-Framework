@@ -1,4 +1,4 @@
-from app.routers.query import is_statement_allowed
+from app.routers.query import is_statement_allowed, normalize_sql
 
 
 def test_allowlist_permits_select_explain_show():
@@ -38,3 +38,30 @@ def test_query_endpoint_accepts_select_shape(client, admin_headers):
         headers=admin_headers,
     )
     assert resp.status_code != 403
+
+
+def test_normalize_sql_strips_trailing_semicolon_and_whitespace():
+    # Regression: every saved query (and most hand-typed ones) ends with
+    # a ';' out of CLI habit, but Presto's client protocol treats that as
+    # a syntax error — it isn't a multi-statement script. Found live: this
+    # broke every single saved query in the Explorer page at once.
+    assert normalize_sql("SELECT 1;") == "SELECT 1"
+    assert normalize_sql("SELECT 1 ;  \n") == "SELECT 1"
+    assert normalize_sql("SELECT 1\nGROUP BY 1;\n") == "SELECT 1\nGROUP BY 1"
+
+
+def test_normalize_sql_leaves_semicolon_free_query_untouched():
+    assert normalize_sql("SELECT 1") == "SELECT 1"
+
+
+def test_query_endpoint_rejects_drop_table_even_with_trailing_semicolon(
+    client, admin_headers
+):
+    # normalize_sql runs before the allowlist check — confirms stripping
+    # the semicolon doesn't accidentally let a disguised mutation through.
+    resp = client.post(
+        "/v1/query",
+        json={"sql": "DROP TABLE lake.ulpf.events;"},
+        headers=admin_headers,
+    )
+    assert resp.status_code == 403

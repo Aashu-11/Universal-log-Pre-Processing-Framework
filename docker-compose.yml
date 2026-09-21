@@ -229,7 +229,7 @@ services:
     networks: [ulpf]
 
   # --- ULPF's own application layer --------------------------------------
-  # Everything above this line is infrastructure. These five services are
+  # Everything above this line is infrastructure. These six services are
   # ULPF's own code, containerized — collector/processor read parser packs,
   # dictionaries and enrichment data as mounted volumes (not baked into the
   # image) so a parser publish (Phase 7) or `ulpfctl gen-enrichment` run is
@@ -342,6 +342,25 @@ services:
       interval: 10s
       timeout: 5s
       retries: 15
+    networks: [ulpf]
+
+  ulpf-dlq-bridge:
+    build:
+      context: .
+      dockerfile: ./deploy/go/Dockerfile
+    image: ulpf/go:latest
+    container_name: ulpf-dlq-bridge
+    restart: unless-stopped
+    command: ["/app/ulpf-dlq-bridge"]
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      control-plane:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKERS: kafka:9092
+      KAFKA_TOPIC_DLQ: ulpf.dlq
+      ULPF_CONTROL_PLANE_URL: http://control-plane:8000
     networks: [ulpf]
 
   onboarding:

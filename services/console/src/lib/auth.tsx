@@ -1,6 +1,6 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { controlPlane, setAuthToken, getAuthToken } from "./api";
+import { AUTH_EXPIRED_EVENT, controlPlane, setAuthToken, getAuthToken } from "./api";
 import type { Role, TokenResponse } from "./types";
 
 interface AuthState {
@@ -15,7 +15,14 @@ const AuthContext = createContext<AuthState | null>(null);
 
 function decodeRoleAndUser(token: string): { role: Role; username: string } | null {
   try {
-    const payload = JSON.parse(atob(token.split(".")[1] ?? ""));
+    const payload = JSON.parse(atob(token.split(".")[1] ?? "")) as {
+      role?: Role;
+      sub?: string;
+      exp?: number;
+    };
+    if (!payload.role || !payload.sub || (payload.exp !== undefined && payload.exp * 1000 <= Date.now())) {
+      return null;
+    }
     return { role: payload.role as Role, username: payload.sub as string };
   } catch {
     return null;
@@ -25,6 +32,10 @@ function decodeRoleAndUser(token: string): { role: Role; username: string } | nu
 export function AuthProvider({ children }: { children: ReactNode }) {
   const initial = getAuthToken();
   const initialDecoded = initial ? decodeRoleAndUser(initial) : null;
+
+  if (initial && !initialDecoded) {
+    setAuthToken(null);
+  }
 
   const [role, setRole] = useState<Role | null>(initialDecoded?.role ?? null);
   const [username, setUsername] = useState<string | null>(initialDecoded?.username ?? null);
@@ -45,6 +56,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRole(null);
     setUsername(null);
   };
+
+  useEffect(() => {
+    const handleExpiredSession = () => {
+      setRole(null);
+      setUsername(null);
+    };
+    window.addEventListener(AUTH_EXPIRED_EVENT, handleExpiredSession);
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handleExpiredSession);
+  }, []);
 
   const value = useMemo<AuthState>(
     () => ({ isAuthenticated: role !== null, role, username, login, logout }),

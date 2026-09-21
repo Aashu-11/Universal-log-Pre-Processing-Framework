@@ -20,7 +20,7 @@ queries against N different log shapes.
 SELECT observer_vendor, observer_product, event_action, count(*) AS events,
        sum(network_bytes_total) AS bytes
 FROM lake.ulpf.events
-WHERE dt = current_date AND dst_port = 443
+WHERE dt = CAST(current_date AS varchar) AND dst_port = 443
 GROUP BY 1, 2, 3
 ORDER BY events DESC;
 ```
@@ -38,7 +38,7 @@ GROUP BY 1, 2
 UNION ALL
 SELECT 'historical' AS tier, src_ip, count(*) AS events
 FROM lake.ulpf.events
-WHERE dt = current_date
+WHERE dt = CAST(current_date AS varchar)
 GROUP BY 1, 2;
 ```
 
@@ -56,7 +56,7 @@ SELECT e.observer_vendor, e.lineage_parser_id, p.version AS registered_version,
 FROM lake.ulpf.events e
 JOIN meta.public.parser_registry p
   ON e.lineage_parser_id = p.parser_id
-WHERE e.dt = current_date
+WHERE e.dt = CAST(current_date AS varchar)
 GROUP BY 1, 2, 3, 4;
 ```
 
@@ -87,7 +87,7 @@ SELECT observer_vendor,
        avg(cardinality(unmapped)) AS avg_unmapped_fields,
        sum(CASE WHEN raw_sha256 IS NULL THEN 1 ELSE 0 END) AS missing_raw_ref
 FROM lake.ulpf.events
-WHERE dt = current_date
+WHERE dt = CAST(current_date AS varchar)
 GROUP BY 1;
 ```
 
@@ -102,7 +102,7 @@ SELECT lineage_parser_id, hour,
        avg(quality_score) AS avg_quality,
        sum(CASE WHEN lineage_parse_status = 'partial' THEN 1 ELSE 0 END) AS partials
 FROM lake.ulpf.events
-WHERE dt = current_date
+WHERE dt = CAST(current_date AS varchar)
 GROUP BY 1, 2
 ORDER BY 1, 2;
 ```
@@ -121,6 +121,6 @@ SELECT src_ip,
        sum(network_bytes_out) * 1.0 / nullif(sum(network_bytes_in), 0) AS out_in_ratio,
        sum(CASE WHEN event_action = 'blocked' THEN 1 ELSE 0 END) * 1.0 / count(*) AS block_rate
 FROM lake.ulpf.events
-WHERE dt = current_date
+WHERE dt = CAST(current_date AS varchar)
 GROUP BY 1, 2;
 ```
