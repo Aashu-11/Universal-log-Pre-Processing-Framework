@@ -42,7 +42,7 @@ services:
   # --- Object store ----------------------------------------------------------
   # minio/minio — AGPL-3.0, free self-hosted. Verified tag exists.
   minio:
-    image: minio/minio:RELEASE.2024-01-16T16-07-38Z
+    image: quay.io/minio/minio:RELEASE.2024-01-16T16-07-38Z
     container_name: ulpf-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -62,7 +62,7 @@ services:
     networks: [ulpf]
 
   minio-init:
-    image: minio/mc:latest
+    image: quay.io/minio/mc:RELEASE.2024-01-16T16-06-34Z
     container_name: ulpf-minio-init
     depends_on:
       minio:

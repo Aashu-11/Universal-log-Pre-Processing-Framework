@@ -23,10 +23,10 @@ check() {
 echo "=== Infrastructure ==="
 check "postgres"          "docker exec ulpf-postgres pg_isready -U ulpf -d ulpf_meta"
 check "minio"              "curl -sf http://localhost:9000/minio/health/live"
-check "kafka"               "docker exec ulpf-kafka /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092"
+check "kafka"              "docker exec ulpf-kafka /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092"
 check "hive-metastore"     "bash -c 'echo > /dev/tcp/127.0.0.1/9083'"
-check "presto"              "curl -sf http://localhost:8080/v1/info | grep -q '\"starting\":false'"
-check "prometheus"        "curl -sf http://localhost:9090/-/healthy"
+check "presto"             "curl -sf http://localhost:8080/v1/info | grep -q '\"starting\":false'"
+check "prometheus"         "curl -sf http://localhost:9090/-/healthy"
 check "grafana"            "curl -sf http://localhost:3000/api/health"
 
 echo "=== ULPF application layer ==="

@@ -16,7 +16,11 @@ USER root
 # Check-Valid-Until disabled for this one `apt-get update`, which only
 # affects trusting the repository's freshness claim, not package
 # signatures (packages are still GPG-verified normally).
-RUN (command -v curl >/dev/null 2>&1 || (apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y --no-install-recommends curl ca-certificates && rm -rf /var/lib/apt/lists/*)) \
+RUN printf 'deb http://archive.debian.org/debian bullseye main contrib non-free\ndeb http://archive.debian.org/debian bullseye-backports main contrib non-free\n' > /etc/apt/sources.list \
+    && rm -f /etc/apt/sources.list.d/*.list \
+    && apt-get -o Acquire::Check-Valid-Until=false update \
+    && apt-get install -y --no-install-recommends curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
     && curl -sSL -o /opt/hive/lib/postgresql-jdbc.jar \
       "https://repo1.maven.org/maven2/org/postgresql/postgresql/${PG_JDBC_VERSION}/postgresql-${PG_JDBC_VERSION}.jar" \
     && echo "${PG_JDBC_SHA256}  /opt/hive/lib/postgresql-jdbc.jar" | sha256sum -c -
