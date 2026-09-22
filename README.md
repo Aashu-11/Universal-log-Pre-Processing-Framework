@@ -498,7 +498,7 @@ push and PR.
 ├── deploy/                   # Dockerfiles, Presto catalogs, Hive, Grafana, Postgres init
 ├── testdata/golden/          # 75 golden fixtures (25 × 3 vendors)
 ├── scripts/                  # demo.sh, verify.sh
-├── docs/                     # BUILD_PLAN.md, DECISIONS.md, QUERIES.md, LICENSES.md
+├── docs/                     # BUILD_PLAN.md, DECISIONS.md, QUERIES.md, LICENSES.md, LOGVERSE.md
 ├── docker-compose.yml
 └── Makefile
 ```
@@ -507,7 +507,7 @@ push and PR.
 
 ## Screenshots / Demo
 
-
+<!-- TODO: add a LogVerse screenshot here (console → LogVerse, live scene with a few particles in flight) once captured from a running stack. Not committed yet — see docs/LOGVERSE.md for the feature writeup and demo flow in the meantime. -->
 
 ---
 

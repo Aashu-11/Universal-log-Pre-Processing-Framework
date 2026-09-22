@@ -21,3 +21,4 @@ deploy/certs/*.key
 coverage.out
 services/control-plane/*.db
 data/
+CLAUDE.md

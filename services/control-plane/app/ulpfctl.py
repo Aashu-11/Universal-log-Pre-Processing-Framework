@@ -162,7 +162,10 @@ def vault_prove(
     lines = output.strip().splitlines()
     json_line = lines[-1] if lines else "{}"
     try:
-        return json.loads(json_line)
+        proof = json.loads(json_line)
+        verdict = lines[0].strip().lower() if lines else ""
+        proof["verified"] = True if verdict == "proof valid: true" else False if verdict == "proof valid: false" else None
+        return proof
     except json.JSONDecodeError as e:
         raise UlpfctlError("vault prove returned non-JSON output", output) from e
 

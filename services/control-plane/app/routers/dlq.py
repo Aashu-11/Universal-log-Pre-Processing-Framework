@@ -8,7 +8,7 @@ way.
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -50,6 +50,7 @@ def list_dlq(
     reason: str | None = None,
     parser_id: str | None = None,
     resolved: bool | None = None,
+    limit: int | None = Query(default=None, ge=1, le=500),
     db: Session = Depends(get_db),
     _: CurrentUser = Depends(require_role("admin", "engineer", "analyst", "auditor")),
 ):
@@ -60,7 +61,10 @@ def list_dlq(
         q = q.filter(DLQEvent.parser_id == parser_id)
     if resolved is not None:
         q = q.filter(DLQEvent.resolved == resolved)
-    return q.order_by(DLQEvent.occurred_at.desc()).all()
+    q = q.order_by(DLQEvent.occurred_at.desc())
+    if limit is not None:
+        q = q.limit(limit)
+    return q.all()
 
 
 class ReplayRequest(BaseModel):

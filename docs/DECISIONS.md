@@ -2,6 +2,39 @@
 
 One short entry per non-obvious choice, newest first.
 
+## D-020 — LogVerse: reused endpoints, no SSE, Html labels not drei Text, derived (not inventoried) assets
+Building the 3D "LogVerse" console page surfaced four choices worth
+recording. (1) **No new backend endpoint.** Every data source it needs
+(sources, recent normalized events, DLQ rows, the vault's Merkle chain,
+per-event trace, pipeline stats) is already reachable through an existing
+endpoint — `POST /v1/query` (with two extra columns pulled into the SELECT
+list for events, and a query against `vault.ulpf.raw_segments` for the
+chain) and the same REST endpoints every other console page calls. This
+also meant reusing polling (`usePolling`-style hooks) rather than adding
+SSE/WebSocket infrastructure that doesn't exist anywhere else in this
+codebase yet — CLAUDE.md-adjacent guidance to prefer the project's existing
+transport over introducing a new one applied directly. (2) **Labels use
+drei's `<Html>`, never `<Text>`.** `@react-three/drei`'s `<Text>` wraps
+`troika-three-text`, which fetches a default font file from a CDN at
+runtime unless given a local `font` prop — a real air-gap violation risk
+for a project whose CLAUDE.md is explicit that zero outbound runtime calls
+is a hard requirement, not a preference. `<Html>` renders real DOM using
+the already-bundled `@fontsource-variable/ibm-plex-sans`, with zero
+runtime-fetch risk, at the cost of labels being 2D overlays rather than
+true 3D-rendered text — an acceptable trade for a security/air-gap
+requirement. (3) **`npm install` needs `--legacy-peer-deps`** (now pinned
+via `services/console/.npmrc`): `@react-three/fiber@9` declares optional
+peer deps on `expo`/`react-native` (for its React Native renderer target,
+unused here) that npm's strict resolver trips over even for a pure web
+install with a perfectly compatible React version — not a real version
+conflict, just noisy optional-peer resolution. (4) **"Internal assets" has
+no backing inventory endpoint** in this API, so the cluster is derived from
+real event data instead of invented: distinct `dst_ip` values seen with
+`enrich_dst_is_internal=true` in the currently-buffered events, ranked by
+frequency, explicitly labeled in the scene as "observed destinations, not a
+formal inventory" — see `docs/LOGVERSE.md` for the full writeup, including
+which timing values are visual estimates vs. server-measured.
+
 ## D-019 — Merkle chain tip must be bootstrapped from the ledger on startup
 Found by running `ulpfctl vault verify` by hand against a store written to
 by several restarted collector processes: 4 of that day's segments were

@@ -4,10 +4,11 @@ import { NavLink } from "react-router-dom";
 import { useAuth } from "../../lib/auth";
 import { Badge } from "../ui/Badge";
 
-type IconName = "activity" | "pipeline" | "sources" | "search" | "trace" | "code" | "alert" | "shield";
+type IconName = "activity" | "pipeline" | "sources" | "search" | "trace" | "code" | "alert" | "shield" | "cube";
 
 const NAV_ITEMS: { to: string; label: string; description: string; icon: IconName; end?: boolean }[] = [
   { to: "/", label: "Live Theater", description: "Event stream", icon: "activity", end: true },
+  { to: "/logverse", label: "LogVerse", description: "3D forensic time machine", icon: "cube" },
   { to: "/pipeline", label: "Pipeline", description: "System health", icon: "pipeline" },
   { to: "/sources", label: "Sources", description: "Asset inventory", icon: "sources" },
   { to: "/explorer", label: "Explorer", description: "Federated search", icon: "search" },
@@ -42,7 +43,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <div className="px-4 pb-2 pt-5"><div className="eyebrow px-2">Security operations</div></div>
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
-          {NAV_ITEMS.map((item) => (
+          {NAV_ITEMS.map((item) => item.to === "/logverse" ? (
+            <a key={item.to} href={item.to} target="_blank" rel="noopener noreferrer" aria-label="Open LogVerse in a new tab" className="group relative flex items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-[var(--color-text-secondary)] transition-all duration-200 hover:border-white/[0.07] hover:bg-white/[0.025] hover:text-white">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-white/[0.07] bg-white/[0.025] text-[var(--color-text-muted)] group-hover:text-[var(--color-text-secondary)]"><NavIcon name={item.icon} /></span>
+              <span className="min-w-0"><span className="block truncate text-[11.5px] font-medium">{item.label} ↗</span><span className="mt-0.5 block truncate text-[8.5px] uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Opens in new tab</span></span>
+            </a>
+          ) : (
             <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) =>
               `group relative flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-all duration-200 ${isActive ? "border-[var(--color-accent)]/25 bg-[linear-gradient(100deg,rgba(124,79,224,0.17),rgba(47,92,190,0.07))] text-white" : "border-transparent text-[var(--color-text-secondary)] hover:border-white/[0.07] hover:bg-white/[0.025] hover:text-white"}`
             }>
@@ -86,7 +92,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <div className="border-b border-white/[0.08] bg-[#08080b]/95 px-3 py-2 lg:hidden">
           <nav className="flex gap-1 overflow-x-auto">
-            {NAV_ITEMS.map((item) => <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => `shrink-0 rounded-md border px-3 py-1.5 text-[10px] font-medium ${isActive ? "border-[var(--color-accent)]/35 bg-[var(--color-accent)]/15 text-white" : "border-transparent text-[var(--color-text-muted)]"}`}>{item.label}</NavLink>)}
+            {NAV_ITEMS.map((item) => item.to === "/logverse" ? <a key={item.to} href={item.to} target="_blank" rel="noopener noreferrer" className="shrink-0 rounded-md border border-transparent px-3 py-1.5 text-[10px] font-medium text-[var(--color-text-muted)]">{item.label} ↗</a> : <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => `shrink-0 rounded-md border px-3 py-1.5 text-[10px] font-medium ${isActive ? "border-[var(--color-accent)]/35 bg-[var(--color-accent)]/15 text-white" : "border-transparent text-[var(--color-text-muted)]"}`}>{item.label}</NavLink>)}
           </nav>
         </div>
 
@@ -113,6 +119,7 @@ function NavIcon({ name }: { name: IconName }) {
     code: <><path d="m8 8-4 4 4 4M16 8l4 4-4 4M14 4l-4 16" /></>,
     alert: <><path d="M12 3 2.8 19h18.4L12 3Z" /><path d="M12 9v4M12 16.5v.1" /></>,
     shield: <><path d="M12 2.8 20 6v5.6c0 4.7-3.2 8.1-8 9.6-4.8-1.5-8-4.9-8-9.6V6l8-3.2Z" /><path d="m8.5 12 2.2 2.2 4.9-5" /></>,
+    cube: <><path d="M12 3 20 7.5v9L12 21 4 16.5v-9L12 3Z" /><path d="M4 7.5 12 12l8-4.5M12 12v9" /></>,
   };
   return <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }
