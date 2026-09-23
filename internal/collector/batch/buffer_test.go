@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ulpf/ulpf/internal/collector"
+	"github.com/logkrama/logkrama/internal/collector"
 )
 
 func ev(i int) collector.RawEvent {

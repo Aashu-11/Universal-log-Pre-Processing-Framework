@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ulpf/ulpf/internal/parse"
-	"github.com/ulpf/ulpf/internal/parse/dsl"
-	"github.com/ulpf/ulpf/internal/parse/ops"
+	"github.com/logkrama/logkrama/internal/parse"
+	"github.com/logkrama/logkrama/internal/parse/dsl"
+	"github.com/logkrama/logkrama/internal/parse/ops"
 )
 
 func repoRoot(t *testing.T) string {
@@ -30,7 +30,7 @@ type goldenFixture struct {
 	Fields   map[string]any `json:"fields"`
 }
 
-// TestGoldenFixtures is the Go-test form of `ulpfctl parser test --all`,
+// TestGoldenFixtures is the Go-test form of `logkramactl parser test --all`,
 // so `go test ./...` alone proves the Phase 3 gate without needing the CLI
 // built first.
 func TestGoldenFixtures(t *testing.T) {

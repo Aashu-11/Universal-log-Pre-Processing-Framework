@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ulpf/ulpf/internal/vault/store"
+	"github.com/logkrama/logkrama/internal/vault/store"
 )
 
 func newTestVault(t *testing.T) (*Vault, store.Store, string) {
@@ -254,7 +254,7 @@ func TestConcurrentWritesDoNotCorrupt(t *testing.T) {
 }
 
 // TestBootstrapResumesChainAcrossRestart is a regression test for a real
-// bug found while manually testing `ulpfctl vault verify` against a store
+// bug found while manually testing `logkramactl vault verify` against a store
 // that had been written to by several restarted collector processes during
 // a debugging session: every process restart created a fresh Vault with
 // lastRoot=0, so the first segment sealed after each restart broke the
@@ -379,7 +379,7 @@ func (c *countingStore) Get(ctx context.Context, key string) ([]byte, error) {
 // throughput bug: Read used to fetch and zstd-decompress the entire segment
 // from the object store on every single call, even when reading many events
 // out of the same segment back to back — the actual bottleneck behind
-// cmd/ulpf-processor's per-event consume loop running far slower than the
+// cmd/logkrama-processor's per-event consume loop running far slower than the
 // collector could write, since a segment holding hundreds of events meant
 // hundreds of redundant full-segment fetches for what should be one. A
 // segment's bytes must be fetched at most once regardless of how many of

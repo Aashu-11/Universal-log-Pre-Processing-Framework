@@ -308,7 +308,7 @@ def _extract_by_template(template: str, line: str) -> list[str | None]:
     mined template's literal segments as anchors — the same linear-walk
     idea as the dissect operator itself, used here only to gather sample
     values for type inference (the real extraction at runtime is the
-    generated dissect operator, exercised via `ulpfctl parser run`).
+    generated dissect operator, exercised via `logkramactl parser run`).
     """
     segments = template.split("<*>")
     values: list[str | None] = []

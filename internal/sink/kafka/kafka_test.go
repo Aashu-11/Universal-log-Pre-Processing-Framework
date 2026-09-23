@@ -8,8 +8,8 @@ import (
 
 	kg "github.com/segmentio/kafka-go"
 
-	"github.com/ulpf/ulpf/internal/schema"
-	sinkkafka "github.com/ulpf/ulpf/internal/sink/kafka"
+	"github.com/logkrama/logkrama/internal/schema"
+	sinkkafka "github.com/logkrama/logkrama/internal/sink/kafka"
 )
 
 type fakeProducer struct {
@@ -32,7 +32,7 @@ func (f *fakeProducer) Close() error {
 
 func TestKafkaSinkKeysByEventID(t *testing.T) {
 	fp := &fakeProducer{}
-	s := sinkkafka.NewWithProducer("ulpf.events.normalized", fp)
+	s := sinkkafka.NewWithProducer("logkrama.events.normalized", fp)
 
 	e := &schema.Event{
 		Event:    schema.EventMeta{ID: "evt-123", Kind: "event", Dataset: "paloalto.panos.traffic"},

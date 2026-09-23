@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/ulpf/ulpf/internal/collector/batch"
-	"github.com/ulpf/ulpf/internal/telemetry"
+	"github.com/logkrama/logkrama/internal/collector/batch"
+	"github.com/logkrama/logkrama/internal/telemetry"
 )
 
 // TLSConfig configures the syslog TLS/6514-style listener.

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/ulpf/ulpf/internal/collector"
+	"github.com/logkrama/logkrama/internal/collector"
 )
 
 // ErrBackpressure is returned by Push when both the in-memory buffer and the

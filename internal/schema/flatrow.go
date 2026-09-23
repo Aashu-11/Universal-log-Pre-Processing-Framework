@@ -3,7 +3,7 @@ package schema
 // FlatRow is the underscored, flat projection of Event used by every
 // consumer that isn't the nested JSON wire format: the Parquet lake sink,
 // the Kafka JSON stream sink (its field names must match
-// deploy/presto/etc/kafka/ulpf.events_normalized.json exactly), and
+// deploy/presto/etc/kafka/logkrama.events_normalized.json exactly), and
 // schema/presto/ddl.sql. Namespace.field becomes namespace_field — e.g.
 // Event.Src.IP becomes FlatRow.SrcIP with column name "src_ip".
 //

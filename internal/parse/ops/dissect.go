@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ulpf/ulpf/internal/parse/dsl"
-	"github.com/ulpf/ulpf/internal/parse/fields"
+	"github.com/logkrama/logkrama/internal/parse/dsl"
+	"github.com/logkrama/logkrama/internal/parse/fields"
 )
 
 func init() { register("dissect", buildDissect) }

@@ -2,8 +2,41 @@
 
 One short entry per non-obvious choice, newest first.
 
+## D-020 — LogVerse: reused endpoints, no SSE, Html labels not drei Text, derived (not inventoried) assets
+Building the 3D "LogVerse" console page surfaced four choices worth
+recording. (1) **No new backend endpoint.** Every data source it needs
+(sources, recent normalized events, DLQ rows, the vault's Merkle chain,
+per-event trace, pipeline stats) is already reachable through an existing
+endpoint — `POST /v1/query` (with two extra columns pulled into the SELECT
+list for events, and a query against `vault.logkrama.raw_segments` for the
+chain) and the same REST endpoints every other console page calls. This
+also meant reusing polling (`usePolling`-style hooks) rather than adding
+SSE/WebSocket infrastructure that doesn't exist anywhere else in this
+codebase yet — CLAUDE.md-adjacent guidance to prefer the project's existing
+transport over introducing a new one applied directly. (2) **Labels use
+drei's `<Html>`, never `<Text>`.** `@react-three/drei`'s `<Text>` wraps
+`troika-three-text`, which fetches a default font file from a CDN at
+runtime unless given a local `font` prop — a real air-gap violation risk
+for a project whose CLAUDE.md is explicit that zero outbound runtime calls
+is a hard requirement, not a preference. `<Html>` renders real DOM using
+the already-bundled `@fontsource-variable/ibm-plex-sans`, with zero
+runtime-fetch risk, at the cost of labels being 2D overlays rather than
+true 3D-rendered text — an acceptable trade for a security/air-gap
+requirement. (3) **`npm install` needs `--legacy-peer-deps`** (now pinned
+via `services/console/.npmrc`): `@react-three/fiber@9` declares optional
+peer deps on `expo`/`react-native` (for its React Native renderer target,
+unused here) that npm's strict resolver trips over even for a pure web
+install with a perfectly compatible React version — not a real version
+conflict, just noisy optional-peer resolution. (4) **"Internal assets" has
+no backing inventory endpoint** in this API, so the cluster is derived from
+real event data instead of invented: distinct `dst_ip` values seen with
+`enrich_dst_is_internal=true` in the currently-buffered events, ranked by
+frequency, explicitly labeled in the scene as "observed destinations, not a
+formal inventory" — see `docs/LOGVERSE.md` for the full writeup, including
+which timing values are visual estimates vs. server-measured.
+
 ## D-019 — Merkle chain tip must be bootstrapped from the ledger on startup
-Found by running `ulpfctl vault verify` by hand against a store written to
+Found by running `logkramactl vault verify` by hand against a store written to
 by several restarted collector processes: 4 of that day's segments were
 reported `BROKEN` — not from tampering or data loss, but because
 `Vault.New()` never read the existing ledger, so every fresh process
@@ -14,7 +47,7 @@ This isn't a test-only artifact — a legitimate production restart (deploy,
 crash-recovery, not just a hard kill) hits the exact same path. Fixed with
 `Vault.Bootstrap(ctx)`: reads today's ledger once at startup and resumes
 `lastRoot`/`lastDay` from the last entry, a no-op on a fresh day/deployment
-with no prior entries. Wired into `cmd/ulpf-collector` right after
+with no prior entries. Wired into `cmd/logkrama-collector` right after
 `vault.New(...)`, before the first `WriteBatch`.
 `TestBootstrapResumesChainAcrossRestart` proves two separate `Vault`
 instances on the same store — process A seals a segment, "exits" (discarded,
@@ -52,31 +85,31 @@ sealed (just very late). Fixed with `Vault.SealIfStale(ctx)`, which seals
 the active segment only if it's actually past `MaxSegmentAge` (a no-op
 otherwise, so it doesn't fragment output by sealing on every tick
 regardless of age), called every second from a ticker goroutine in
-`cmd/ulpf-collector`'s main loop
+`cmd/logkrama-collector`'s main loop
 (`runSealTicker`) — independent of whether new writes are arriving.
 `TestSealIfStaleSealsAnAgedOutSegmentWithNoNewWrites` proves a segment with
 exactly one write and zero follow-up traffic still becomes durable and
 readable once its age threshold passes, with no second write required.
 
-## D-017 — vault.ulpf.raw_index / raw_segments had no live producer
+## D-017 — vault.logkrama.raw_index / raw_segments had no live producer
 Discovered while verifying Phase 6 across all 4 catalogs for real: `lake`
-and `stream` had real data, but `vault.ulpf.raw_index` and
+and `stream` had real data, but `vault.logkrama.raw_index` and
 `.raw_segments` returned 0 rows despite correct DDL and a working Presto
 catalog. Root cause: `internal/sink/vaultindex.IndexSink` (writes
 `raw_index`) and `vaultindex.ExportSegments` (writes `raw_segments`) were
 both fully implemented and unit-tested but never invoked by any running
 process — a real wiring gap, not a design gap. Fixed two ways: (1)
-`cmd/ulpf-collector` now fans every ref out to Kafka (primary, the handoff
-`ulpf-processor` depends on) *and* to an `IndexSink` (secondary, best-effort
+`cmd/logkrama-collector` now fans every ref out to Kafka (primary, the handoff
+`logkrama-processor` depends on) *and* to an `IndexSink` (secondary, best-effort
 — see `internal/collector/fanout.go`'s `FanoutPublisher`), flushed every
-30s and on shutdown; (2) added `ulpfctl vault export-index --from --to`,
+30s and on shutdown; (2) added `logkramactl vault export-index --from --to`,
 which reads a day's ledger (already written by every `Vault.Seal`) and
 rolls it into `raw_segments` Parquet — meant to run after a load burst or
-on a schedule, followed by `ulpfctl partitions sync` so Presto discovers
+on a schedule, followed by `logkramactl partitions sync` so Presto discovers
 the new `dt=` partition.
 
 ## D-016 — `Vault.Read` had no segment cache: a real O(N) per-event throughput bug
-Found while diagnosing why `cmd/ulpf-processor` processed real, correctly
+Found while diagnosing why `cmd/logkrama-processor` processed real, correctly
 sealed events at ~1/sec instead of anywhere near ingest rate, with zero
 errors logged (ruling out the D-015 retry issue). `Vault.Read` fetched the
 *entire* sealed segment object from the store and zstd-decompressed it on
@@ -93,11 +126,11 @@ have been very easy to misattribute to "MinIO/Docker network is slow" or
 "the enrichment pipeline is doing too much work" without profiling.
 
 ## D-015 — Processor's vault-read retry deadline must exceed the collector's segment-seal window
-A second, more subtle bug hiding behind D-013's stall: `cmd/ulpf-processor`
+A second, more subtle bug hiding behind D-013's stall: `cmd/logkrama-processor`
 retried a failed vault `Read` (absorbing the gap between "ref published to
 Kafka" and "that ref's segment actually sealed to the store") for a
 hardcoded 20 seconds. The collector's own default segment-seal window
-(`ULPF_VAULT_SEGMENT_MAX_SECONDS`) is 300 seconds — meaning under default
+(`LOGKRAMA_VAULT_SEGMENT_MAX_SECONDS`) is 300 seconds — meaning under default
 production settings, an event published to Kafka the instant it landed in
 a freshly-opened segment could legitimately need up to 5 minutes before
 its segment sealed, but the processor would give up after 20 seconds and
@@ -106,9 +139,9 @@ This was masked during testing because the test harness overrode the seal
 window to 15s, well under the old 20s retry budget — it never would have
 been caught without deliberately testing with production-realistic seal
 timing. Fixed by making the deadline a parameter
-(`ULPF_VAULT_READ_RETRY_SECONDS`, default 330s — 300s default seal window
+(`LOGKRAMA_VAULT_READ_RETRY_SECONDS`, default 330s — 300s default seal window
 + 30s margin) instead of a hardcoded constant; `readWithRetry` in
-`cmd/ulpf-processor/main.go` now takes it explicitly, and
+`cmd/logkrama-processor/main.go` now takes it explicitly, and
 `main_test.go` proves both that a sealed segment resolves near-instantly
 (no retry tax on the common case) and that the deadline is actually honored
 for a segment that will never exist.
@@ -118,7 +151,7 @@ The first genuine end-to-end load test against the live Docker stack
 (loggen -> real TCP listener -> collector -> Kafka -> processor -> real
 MinIO-backed vault) sent 120,000 events; the listener correctly accepted
 and counted all of them, but only ~600 ever reached a sealed vault segment,
-and `ulpf_vault_write_duration_seconds_count` froze entirely — the
+and `logkrama_vault_write_duration_seconds_count` froze entirely — the
 collector's pipeline goroutine was alive but not making forward progress.
 Root cause (D-013): `internal/collector.Pipeline.flush()` called
 `RefPublisher.Publish` once per event, synchronously, inside the flush
@@ -157,17 +190,17 @@ mattered enough to run for real rather than mark PENDING.
 ## D-012 — `lake` and `vault` catalogs share one Hive Metastore database
 Verified live once Docker was up: Presto's `lake` and `vault` catalogs both
 point `hive.metastore.uri` at the same single `hive-metastore` container,
-and both use schema name `ulpf` — and Hive Metastore has no concept of a
+and both use schema name `logkrama` — and Hive Metastore has no concept of a
 "Presto catalog," only databases/schemas. The practical effect:
-`lake.ulpf` and `vault.ulpf` are the same underlying Hive database, so
-`SHOW TABLES FROM vault.ulpf` lists `events` (a lake table) alongside
+`lake.logkrama` and `vault.logkrama` are the same underlying Hive database, so
+`SHOW TABLES FROM vault.logkrama` lists `events` (a lake table) alongside
 `raw_segments`/`raw_index`. Data itself stays correctly separated (each
 table's `external_location` points at its own S3 prefix —
-`s3a://ulpf-lake/normalized/` vs `s3a://ulpf-raw/index/...` — so there's no
+`s3a://logkrama-lake/normalized/` vs `s3a://logkrama-raw/index/...` — so there's no
 data crosstalk), and every demo query (Q1-Q7, docs/QUERIES.md) still
 returns correct results through the `lake.`/`vault.` catalog-qualified
 names Presto's SQL layer expects. What's lost is metadata-level isolation
-(a `DROP TABLE vault.ulpf.events` would drop the lake table too). A
+(a `DROP TABLE vault.logkrama.events` would drop the lake table too). A
 "more correct" fix is a second, independent Hive Metastore + Postgres
 database per catalog; not done here since it roughly doubles that part of
 the compose stack for a prototype where the demo queries — the actual
@@ -181,42 +214,42 @@ way a real IOC feed would), `internal/loggen.SonicWallTraffic` generates a
 synthetic SonicWall-shaped kv log from the same Generator every other
 vendor line comes from — deliberately left out of `AllVendors` so it stays
 a genuinely-never-seen-by-any-pack format for the onboarding test. Exposed
-via `ulpfctl gen sonicwall --count N` so the Python onboarding service (and
+via `logkramactl gen sonicwall --count N` so the Python onboarding service (and
 its pytest suite) can generate a fresh sample without duplicating the
 generator logic across languages.
 
-## D-011 — `ulpfctl parser run`: one execution path for onboarding, Workbench, and manual debugging
+## D-011 — `logkramactl parser run`: one execution path for onboarding, Workbench, and manual debugging
 Onboarding needs to run a not-yet-published candidate parser against a raw
 sample and report per-field success — the same operation the Phase 9 Parser
 Workbench's live re-parse needs, and the same operation a human debugging a
 parser by hand wants from the CLI. Implemented once
-(`cmd/ulpfctl/parser_run_cmd.go`, using the same `parse.Compile` +
+(`cmd/logkramactl/parser_run_cmd.go`, using the same `parse.Compile` +
 `normalize.Mapper` the data plane runs) and reused by both the Python
-onboarding service (`app/ulpfctl.py`) and, later, the console — instead of
+onboarding service (`app/logkramactl.py`) and, later, the console — instead of
 onboarding re-implementing a second parse-and-map loop in Python that could
 silently diverge from the Go engine's actual behavior.
 
-## D-008 — Control plane validates parsers by shelling out to `ulpfctl`
+## D-008 — Control plane validates parsers by shelling out to `logkramactl`
 Phase 7's publish endpoint (`services/control-plane/app/routers/parsers.py`)
 needs to lint a candidate parser and run its golden fixtures before storing
 it. Rather than re-implementing DSL validation, unsafe-regex rejection, and
 fixture comparison a second time in Python — a second implementation that
 could silently drift from the Go one — it shells out to the exact compiled
-`bin/ulpfctl.exe` the data plane itself uses (`app/ulpfctl.py`). One
+`bin/logkramactl.exe` the data plane itself uses (`app/logkramactl.py`). One
 validator, shared by both languages. Verified for real:
 `test_publish_rejects_unsafe_regex` and `test_publish_then_rollback` in
 `tests/test_parsers.py` invoke the actual Go binary as a subprocess, not a
-mock — a genuine cross-language integration test. Tradeoff: `ulpfctl.exe`
-must be built (`go build -o bin/ulpfctl.exe ./cmd/ulpfctl`) before these
+mock — a genuine cross-language integration test. Tradeoff: `logkramactl.exe`
+must be built (`go build -o bin/logkramactl.exe ./cmd/logkramactl`) before these
 tests will do anything but skip; CI's Go job already does this before the
 Python job runs.
 
 ## D-009 — Hot-reload distribution reuses Phase 3's fsnotify watch, not Kafka
 CLAUDE.md's Phase 7 spec describes processors subscribing to a
-`ulpf.control.parsers` Kafka topic and fetching artifacts on publish. For
+`logkrama.control.parsers` Kafka topic and fetching artifacts on publish. For
 this single-node prototype, the publish endpoint instead writes the
 artifact straight into the real `packs/` directory on disk (in addition to
-storing it in `ulpf_meta`), which the already-built, already-tested
+storing it in `logkrama_meta`), which the already-built, already-tested
 `internal/parse.Registry.WatchDir` (Phase 3, fsnotify-based) picks up with
 zero new code. This is simpler and, critically, actually verifiable without
 Docker/Kafka reachable — the Kafka-topic path remains the natural next step
@@ -225,7 +258,7 @@ directory (e.g. multiple nodes on different hosts), and the publish
 endpoint's docstring flags exactly that.
 
 ## D-001 — Module path
-Using `github.com/ulpf/ulpf` as a placeholder Go module path since this is a
+Using `github.com/logkrama/logkrama` as a placeholder Go module path since this is a
 prototype not yet published to a real org. Trivial to rename with a global
 `gofmt -r` / import-path rewrite before publishing.
 
@@ -261,7 +294,7 @@ The control plane's SQLAlchemy models target PostgreSQL 16 (the pinned
 metadata DB, reachable by Presto's `meta` catalog). For local development
 without Docker, `services/control-plane` also runs against a local SQLite file
 via the same models purely so we can exercise and test the API with pytest
-before Postgres is reachable. `ulpf_meta` in Postgres remains the only target
+before Postgres is reachable. `logkrama_meta` in Postgres remains the only target
 Presto's `meta` catalog is configured against; SQLite is dev-only and never
 referenced by any catalog config.
 
@@ -280,7 +313,7 @@ the sixth, not-yet-sealed segment when it was hard-killed.
 This is the same buffered-durability trade-off every comparable system makes
 (Kafka producer `linger.ms`, Elasticsearch bulk indexing, Fluentd buffers) —
 the fix is graceful shutdown, not synchronous per-event fsync, which would
-destroy throughput. `cmd/ulpf-collector` already installs a SIGTERM/SIGINT
+destroy throughput. `cmd/logkrama-collector` already installs a SIGTERM/SIGINT
 handler that calls `vault.Seal(ctx)` before exit; this works correctly under
 `docker stop` (the real deployment path, confirmed by Go's os/signal
 handling SIGTERM natively on Linux) and under interactive Ctrl+C on any
@@ -294,7 +327,7 @@ shipped signal-handling code, which is unit-covered by
 `internal/vault/vault_test.go`'s explicit `Seal()` calls.
 Operational takeaway for the demo/production: EPS-heavy deployments that
 want a tighter crash-loss window should lower
-`ULPF_VAULT_SEGMENT_MAX_BYTES`/`_SECONDS` rather than rely on always-graceful
+`LOGKRAMA_VAULT_SEGMENT_MAX_BYTES`/`_SECONDS` rather than rely on always-graceful
 shutdowns.
 
 ## D-006 — Unprivileged listener ports

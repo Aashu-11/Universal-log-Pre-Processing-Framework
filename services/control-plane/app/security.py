@@ -76,14 +76,14 @@ def require_role(*allowed_roles: str):
 def ensure_seed_admin(db: Session) -> None:
     """Creates a default admin/admin account on first startup if the users
     table is empty, purely so `make demo` works with zero manual setup.
-    Dev-only credential — a real deployment sets ULPF_ADMIN_PASSWORD (or
+    Dev-only credential — a real deployment sets LOGKRAMA_ADMIN_PASSWORD (or
     just changes the password immediately after first login).
     """
     import os
 
     if db.query(User).count() > 0:
         return
-    password = os.environ.get("ULPF_ADMIN_PASSWORD", "admin")
+    password = os.environ.get("LOGKRAMA_ADMIN_PASSWORD", "admin")
     db.add(
         User(username="admin", hashed_password=hash_password(password), role="admin")
     )

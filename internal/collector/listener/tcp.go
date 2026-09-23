@@ -8,10 +8,10 @@ import (
 	"net"
 	"time"
 
-	"github.com/ulpf/ulpf/internal/collector"
-	"github.com/ulpf/ulpf/internal/collector/batch"
-	"github.com/ulpf/ulpf/internal/collector/framing"
-	"github.com/ulpf/ulpf/internal/telemetry"
+	"github.com/logkrama/logkrama/internal/collector"
+	"github.com/logkrama/logkrama/internal/collector/batch"
+	"github.com/logkrama/logkrama/internal/collector/framing"
+	"github.com/logkrama/logkrama/internal/telemetry"
 )
 
 // TCPConfig configures the syslog TCP listener. Framing (RFC6587

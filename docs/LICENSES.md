@@ -15,7 +15,7 @@ output.
 | `github.com/minio/minio-go/v7` | Apache-2.0 | MinIO/S3 object store client |
 | `github.com/prometheus/client_golang` | Apache-2.0 | Metrics |
 | `github.com/santhosh-tekuri/jsonschema/v5` | Apache-2.0 | UES JSON Schema validation |
-| `github.com/spf13/cobra` | Apache-2.0 | `ulpfctl` CLI |
+| `github.com/spf13/cobra` | Apache-2.0 | `logkramactl` CLI |
 | `golang.org/x/time` | BSD-3-Clause | HTTP ingest rate limiting |
 | `gopkg.in/yaml.v3` | Apache-2.0 / MIT | Parser/Mapping DSL YAML |
 
@@ -54,7 +54,7 @@ export.
 | `fastapi` | MIT | API framework |
 | `uvicorn` | BSD-3-Clause | ASGI server |
 | `pydantic` / `pydantic-settings` | MIT | Request/response validation, settings |
-| `sqlalchemy` | MIT | ORM against `ulpf_meta` |
+| `sqlalchemy` | MIT | ORM against `logkrama_meta` |
 | `psycopg2-binary` | LGPL with exceptions (permits this use) | PostgreSQL driver |
 | `python-jose[cryptography]` | MIT | JWT signing/verification |
 | `passlib[bcrypt]` + `bcrypt` | BSD-3-Clause / Apache-2.0 | Password hashing |

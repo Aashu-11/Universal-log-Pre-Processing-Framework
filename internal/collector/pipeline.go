@@ -6,12 +6,12 @@ import (
 	"encoding/hex"
 	"time"
 
-	"github.com/ulpf/ulpf/internal/telemetry"
-	"github.com/ulpf/ulpf/internal/vault"
+	"github.com/logkrama/logkrama/internal/telemetry"
+	"github.com/logkrama/logkrama/internal/vault"
 )
 
 // RefPublisher is notified of every durably-vaulted event so it can be
-// announced downstream (Kafka topic ulpf.raw.refs in production). Kept as
+// announced downstream (Kafka topic logkrama.raw.refs in production). Kept as
 // an interface so the pipeline is fully testable without Kafka/Docker.
 type RefPublisher interface {
 	Publish(ctx context.Context, eventID string, ref vault.RawRef, env Envelope) error

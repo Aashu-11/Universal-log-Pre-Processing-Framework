@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/ulpf/ulpf/internal/schema"
+	"github.com/logkrama/logkrama/internal/schema"
 )
 
 type geoRecord struct {

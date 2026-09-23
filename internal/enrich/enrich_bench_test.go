@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ulpf/ulpf/internal/enrich"
-	"github.com/ulpf/ulpf/internal/schema"
+	"github.com/logkrama/logkrama/internal/enrich"
+	"github.com/logkrama/logkrama/internal/schema"
 )
 
 // BenchmarkEnrich measures the full 8-enricher pipeline's per-event

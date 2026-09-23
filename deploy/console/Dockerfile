@@ -2,7 +2,7 @@
 # built bundle must call the control-plane/onboarding APIs via their
 # host-mapped ports (http://localhost:8000 / :8001), which is already
 # src/lib/api.ts's default. No build-time API URL override needed here.
-FROM node:20-alpine AS build
+FROM node:24-alpine AS build
 WORKDIR /app
 COPY services/console/package.json services/console/package-lock.json ./
 RUN npm ci

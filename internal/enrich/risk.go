@@ -1,6 +1,6 @@
 package enrich
 
-import "github.com/ulpf/ulpf/internal/schema"
+import "github.com/logkrama/logkrama/internal/schema"
 
 // RiskScorer computes enrich.risk_score as an explainable sum of
 // contributing factors (enrich.risk_factors), per CLAUDE.md: "risk_score

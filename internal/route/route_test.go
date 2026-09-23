@@ -7,9 +7,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 
-	"github.com/ulpf/ulpf/internal/schema"
-	"github.com/ulpf/ulpf/internal/telemetry"
-	"github.com/ulpf/ulpf/internal/validate"
+	"github.com/logkrama/logkrama/internal/schema"
+	"github.com/logkrama/logkrama/internal/telemetry"
+	"github.com/logkrama/logkrama/internal/validate"
 )
 
 type fakeSink struct {

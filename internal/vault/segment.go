@@ -10,10 +10,10 @@ import (
 
 // Segment wire format (all inside the zstd-compressed object body):
 //
-//	[header]  magic "ULPFVLT1" (8) | segment_id_len (uvarint) | segment_id bytes
+//	[header]  magic "LKRAVLT1" (8) | segment_id_len (uvarint) | segment_id bytes
 //	[frames]  repeated: len (uvarint) | payload (len bytes)      <- RawRef.Offset points at "payload" here
 //	[index]   repeated, one per frame in order: offset (uvarint) | length (uvarint) | sha256 (32 bytes)
-//	[trailer] merkle_root (32) | prev_root (32) | index_offset (8, BE uint64) | event_count (8, BE uint64) | magic "ULPFEND1" (8)
+//	[trailer] merkle_root (32) | prev_root (32) | index_offset (8, BE uint64) | event_count (8, BE uint64) | magic "LKRAEND1" (8)
 //
 // The trailer is fixed-size (88 bytes) and sits at the very end, so a reader
 // can locate the index block and both roots without scanning from the
@@ -22,8 +22,12 @@ import (
 // which need the full ordered leaf list.
 
 var (
-	segmentMagicHeader = [8]byte{'U', 'L', 'P', 'F', 'V', 'L', 'T', '1'}
-	segmentMagicFooter = [8]byte{'U', 'L', 'P', 'F', 'E', 'N', 'D', '1'}
+	segmentMagicHeader = [8]byte{'L', 'K', 'R', 'A', 'V', 'L', 'T', '1'}
+	segmentMagicFooter = [8]byte{'L', 'K', 'R', 'A', 'E', 'N', 'D', '1'}
+	// Legacy markers keep previously sealed vault objects readable after the
+	// LogKrama migration. New segments always use the LogKrama markers above.
+	legacySegmentMagicHeader = [8]byte{0x55, 0x4c, 0x50, 0x46, 0x56, 0x4c, 0x54, 0x31}
+	legacySegmentMagicFooter = [8]byte{0x55, 0x4c, 0x50, 0x46, 0x45, 0x4e, 0x44, 0x31}
 )
 
 const trailerSize = 32 + 32 + 8 + 8 + 8
@@ -105,12 +109,12 @@ func decodeSegment(data []byte) (*decodedSegment, error) {
 	if len(data) < 8+trailerSize {
 		return nil, fmt.Errorf("vault: segment too short (%d bytes)", len(data))
 	}
-	if !bytes.Equal(data[0:8], segmentMagicHeader[:]) {
+	if !bytes.Equal(data[0:8], segmentMagicHeader[:]) && !bytes.Equal(data[0:8], legacySegmentMagicHeader[:]) {
 		return nil, fmt.Errorf("vault: bad segment header magic")
 	}
 
 	trailer := data[len(data)-trailerSize:]
-	if !bytes.Equal(trailer[80:88], segmentMagicFooter[:]) {
+	if !bytes.Equal(trailer[80:88], segmentMagicFooter[:]) && !bytes.Equal(trailer[80:88], legacySegmentMagicFooter[:]) {
 		return nil, fmt.Errorf("vault: bad segment footer magic")
 	}
 	// Trailer layout: [0:32]=root [32:64]=prev [64:72]=index_offset [72:80]=count [80:88]=magic

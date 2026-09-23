@@ -1,6 +1,6 @@
 networks:
-  ulpf:
-    name: ulpf
+  logkrama:
+    name: logkrama
 
 volumes:
   postgres-data:
@@ -13,11 +13,11 @@ services:
   # postgres:16-alpine — PostgreSQL License. Verified tag exists on Docker Hub.
   postgres:
     image: postgres:16-alpine
-    container_name: ulpf-postgres
+    container_name: logkrama-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ulpf
-      POSTGRES_PASSWORD: ulpf_dev_only
+      POSTGRES_USER: logkrama
+      POSTGRES_PASSWORD: logkrama_dev_only
       POSTGRES_DB: postgres
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -29,15 +29,15 @@ services:
       # 5433 on the host because this dev machine also runs a native Windows
       # PostgreSQL service on 5432 (a pre-existing, unrelated service) that
       # silently wins the port and shadows this container otherwise — every
-      # host-side client (`ulpfctl`, control-plane, `psql`) must connect to
+      # host-side client (`logkramactl`, control-plane, `psql`) must connect to
       # 5433, not 5432, from outside Docker.
       - "5433:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ulpf -d ulpf_meta"]
+      test: [ "CMD-SHELL", "pg_isready -U logkrama -d logkrama_meta" ]
       interval: 5s
       timeout: 5s
       retries: 20
-    networks: [ulpf]
+    networks: [ logkrama ]
 
   # --- Object store ----------------------------------------------------------
   # minio/minio — AGPL-3.0, free self-hosted. Verified tag exists.
@@ -47,19 +47,19 @@ services:
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ulpfadmin
-      MINIO_ROOT_PASSWORD: ulpf_dev_only
+      MINIO_ROOT_USER: logkramaadmin
+      MINIO_ROOT_PASSWORD: logkrama_dev_only
     volumes:
       - minio-data:/data
     ports:
       - "9000:9000"
       - "9001:9001"
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: [ "CMD", "mc", "ready", "local" ]
       interval: 5s
       timeout: 5s
       retries: 20
-    networks: [ulpf]
+    networks: [ logkrama ]
 
   minio-init:
     image: quay.io/minio/mc:RELEASE.2024-01-16T16-06-34Z
@@ -68,21 +68,14 @@ services:
       minio:
         condition: service_healthy
     entrypoint: >
-      /bin/sh -c "
-      mc alias set local http://minio:9000 ulpfadmin ulpf_dev_only &&
-      mc mb -p local/ulpf-raw &&
-      mc mb -p local/ulpf-lake &&
-      mc anonymous set none local/ulpf-raw &&
-      mc anonymous set none local/ulpf-lake &&
-      echo 'buckets ready'
-      "
-    networks: [ulpf]
+      /bin/sh -c " mc alias set local http://minio:9000 logkramaadmin logkrama_dev_only && mc mb -p local/logkrama-raw && mc mb -p local/logkrama-lake && mc anonymous set none local/logkrama-raw && mc anonymous set none local/logkrama-lake && echo 'buckets ready' "
+    networks: [ logkrama ]
 
   # --- Stream buffer -----------------------------------------------------
   # apache/kafka — Apache 2.0. KRaft mode, no ZooKeeper. Verified tag exists.
   kafka:
     image: apache/kafka:3.7.0
-    container_name: ulpf-kafka
+    container_name: logkrama-kafka
     restart: unless-stopped
     environment:
       KAFKA_NODE_ID: 1
@@ -97,40 +90,34 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      CLUSTER_ID: ulpf-kraft-cluster-01
+      CLUSTER_ID: logkrama-kraft-cluster-01
     volumes:
       - kafka-data:/var/lib/kafka/data
     ports:
       - "29092:29092"
     healthcheck:
-      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      test: [ "CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1" ]
       interval: 5s
       timeout: 5s
       retries: 30
-    networks: [ulpf]
+    networks: [ logkrama ]
 
   kafka-init:
     image: apache/kafka:3.7.0
-    container_name: ulpf-kafka-init
+    container_name: logkrama-kafka-init
     depends_on:
       kafka:
         condition: service_healthy
     entrypoint: >
-      /bin/sh -c "
-      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic ulpf.raw.refs --partitions 6 --replication-factor 1 &&
-      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic ulpf.events.normalized --partitions 6 --replication-factor 1 --config retention.ms=1800000 &&
-      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic ulpf.dlq --partitions 3 --replication-factor 1 &&
-      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic ulpf.control.parsers --partitions 1 --replication-factor 1 --config retention.ms=-1 --config cleanup.policy=compact &&
-      echo 'topics ready'
-      "
-    networks: [ulpf]
+      /bin/sh -c " /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic logkrama.raw.refs --partitions 6 --replication-factor 1 && /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic logkrama.events.normalized --partitions 6 --replication-factor 1 --config retention.ms=1800000 && /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic logkrama.dlq --partitions 3 --replication-factor 1 && /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic logkrama.control.parsers --partitions 1 --replication-factor 1 --config retention.ms=-1 --config cleanup.policy=compact && echo 'topics ready' "
+    networks: [ logkrama ]
 
   # --- Hive standalone metastore, Postgres-backed, S3A -> MinIO -----------
   # apache/hive — Apache 2.0. Verified tag exists; supports SERVICE_NAME=metastore.
   hive-metastore:
     build: ./deploy/hive
-    image: ulpf/hive-metastore:4.0.0
-    container_name: ulpf-hive-metastore
+    image: logkrama/hive-metastore:4.0.0
+    container_name: logkrama-hive-metastore
     restart: unless-stopped
     depends_on:
       postgres:
@@ -140,16 +127,12 @@ services:
     environment:
       SERVICE_NAME: metastore
       DB_DRIVER: postgres
+      # This volume already has Hive's metastore schema. The Hive image reads
+      # IS_RESUME to skip initialization; re-running it causes duplicate-table
+      # errors after the LogKrama rename.
+      IS_RESUME: "true"
       SERVICE_OPTS: >-
-        -Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver
-        -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://postgres:5432/hive_metastore
-        -Djavax.jdo.option.ConnectionUserName=ulpf
-        -Djavax.jdo.option.ConnectionPassword=ulpf_dev_only
-        -Dfs.s3a.endpoint=http://minio:9000
-        -Dfs.s3a.access.key=ulpfadmin
-        -Dfs.s3a.secret.key=ulpf_dev_only
-        -Dfs.s3a.path.style.access=true
-        -Dfs.s3a.connection.ssl.enabled=false
+        -Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://postgres:5432/hive_metastore -Djavax.jdo.option.ConnectionUserName=logkrama -Djavax.jdo.option.ConnectionPassword=logkrama_dev_only -Dfs.s3a.endpoint=http://minio:9000 -Dfs.s3a.access.key=logkramaadmin -Dfs.s3a.secret.key=logkrama_dev_only -Dfs.s3a.path.style.access=true -Dfs.s3a.connection.ssl.enabled=false
     volumes:
       - ./deploy/hive/hive-site.xml:/opt/hive/conf/hive-site.xml:ro
     ports:
@@ -157,17 +140,17 @@ services:
     healthcheck:
       # netstat/ss/nc aren't in this image; bash's /dev/tcp pseudo-device is
       # a portable enough TCP-connect check without adding another package.
-      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/9083' || exit 1"]
+      test: [ "CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/9083' || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 30
-    networks: [ulpf]
+    networks: [ logkrama ]
 
   # --- PrestoDB coordinator (single node for the prototype) ---------------
   # prestodb/presto — Apache 2.0. Verified tag exists.
   presto-coordinator:
     image: prestodb/presto:0.286
-    container_name: ulpf-presto
+    container_name: logkrama-presto
     restart: unless-stopped
     depends_on:
       hive-metastore:
@@ -185,36 +168,36 @@ services:
     ports:
       - "8080:8080"
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/v1/info | grep -q '\"starting\":false'"]
+      test: [ "CMD-SHELL", "curl -sf http://localhost:8080/v1/info | grep -q '\"starting\":false'" ]
       interval: 10s
       timeout: 5s
       retries: 30
-    networks: [ulpf]
+    networks: [ logkrama ]
 
   # --- Observability --------------------------------------------------------
   prometheus:
     image: prom/prometheus:v2.51.0
-    container_name: ulpf-prometheus
+    container_name: logkrama-prometheus
     restart: unless-stopped
     volumes:
       - ./deploy/grafana/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
       - "9090:9090"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:9090/-/healthy || exit 1"]
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:9090/-/healthy || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 10
-    networks: [ulpf]
+    networks: [ logkrama ]
 
   grafana:
     image: grafana/grafana:10.4.1
-    container_name: ulpf-grafana
+    container_name: logkrama-grafana
     restart: unless-stopped
     environment:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
-      GF_SECURITY_ADMIN_PASSWORD: ulpf_dev_only
+      GF_SECURITY_ADMIN_PASSWORD: logkrama_dev_only
     volumes:
       - grafana-data:/var/lib/grafana
       - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
@@ -222,27 +205,27 @@ services:
     ports:
       - "3000:3000"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 10
-    networks: [ulpf]
+    networks: [ logkrama ]
 
-  # --- ULPF's own application layer --------------------------------------
+  # --- LOGKRAMA's own application layer --------------------------------------
   # Everything above this line is infrastructure. These six services are
-  # ULPF's own code, containerized — collector/processor read parser packs,
+  # LOGKRAMA's own code, containerized — collector/processor read parser packs,
   # dictionaries and enrichment data as mounted volumes (not baked into the
-  # image) so a parser publish (Phase 7) or `ulpfctl gen-enrichment` run is
+  # image) so a parser publish (Phase 7) or `logkramactl gen-enrichment` run is
   # visible without an image rebuild, matching CLAUDE.md's "parsers are
   # data, not code" rule.
-  ulpf-collector:
+  logkrama-collector:
     build:
       context: .
       dockerfile: ./deploy/go/Dockerfile
-    image: ulpf/go:latest
-    container_name: ulpf-collector
+    image: logkrama/go:latest
+    container_name: logkrama-collector
     restart: unless-stopped
-    command: ["/app/ulpf-collector"]
+    command: [ "/app/logkrama-collector" ]
     depends_on:
       minio-init:
         condition: service_completed_successfully
@@ -250,34 +233,34 @@ services:
         condition: service_completed_successfully
     environment:
       MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY: ulpfadmin
-      MINIO_SECRET_KEY: ulpf_dev_only
-      MINIO_RAW_BUCKET: ulpf-raw
+      MINIO_ACCESS_KEY: logkramaadmin
+      MINIO_SECRET_KEY: logkrama_dev_only
+      MINIO_RAW_BUCKET: logkrama-raw
       MINIO_USE_SSL: "false"
       KAFKA_BROKERS: kafka:9092
-      KAFKA_TOPIC_RAW_REFS: ulpf.raw.refs
-      ULPF_NODE_ID: collector-1
-      ULPF_VAULT_SEGMENT_MAX_BYTES: "67108864"
+      KAFKA_TOPIC_RAW_REFS: logkrama.raw.refs
+      LOGKRAMA_NODE_ID: collector-1
+      LOGKRAMA_VAULT_SEGMENT_MAX_BYTES: "67108864"
       # 60s, not the 300s (5min) production default — a showcase/demo build
       # should surface data in the lake within about a minute of sending
       # traffic, not require watching a spinner for five. Raise this back to
       # 300s (or higher) for anything beyond a live demo.
-      ULPF_VAULT_SEGMENT_MAX_SECONDS: "60"
+      LOGKRAMA_VAULT_SEGMENT_MAX_SECONDS: "60"
     ports:
       - "5514:5514/udp"
       - "6601:6601"
       - "8088:8088"
       - "9100:9100"
-    networks: [ulpf]
+    networks: [ logkrama ]
 
-  ulpf-processor:
+  logkrama-processor:
     build:
       context: .
       dockerfile: ./deploy/go/Dockerfile
-    image: ulpf/go:latest
-    container_name: ulpf-processor
+    image: logkrama/go:latest
+    container_name: logkrama-processor
     restart: unless-stopped
-    command: ["/app/ulpf-processor"]
+    command: [ "/app/logkrama-processor" ]
     depends_on:
       minio-init:
         condition: service_completed_successfully
@@ -285,33 +268,33 @@ services:
         condition: service_completed_successfully
     environment:
       MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY: ulpfadmin
-      MINIO_SECRET_KEY: ulpf_dev_only
-      MINIO_RAW_BUCKET: ulpf-raw
-      MINIO_LAKE_BUCKET: ulpf-lake
+      MINIO_ACCESS_KEY: logkramaadmin
+      MINIO_SECRET_KEY: logkrama_dev_only
+      MINIO_RAW_BUCKET: logkrama-raw
+      MINIO_LAKE_BUCKET: logkrama-lake
       MINIO_USE_SSL: "false"
       KAFKA_BROKERS: kafka:9092
-      KAFKA_TOPIC_RAW_REFS: ulpf.raw.refs
-      KAFKA_TOPIC_NORMALIZED: ulpf.events.normalized
-      KAFKA_TOPIC_DLQ: ulpf.dlq
-      ULPF_NODE_ID: processor-1
-      ULPF_PACKS_DIR: /app/packs
-      ULPF_DICTIONARIES_DIR: /app/config/dictionaries
-      ULPF_ENRICHMENT_DIR: /app/enrichment
+      KAFKA_TOPIC_RAW_REFS: logkrama.raw.refs
+      KAFKA_TOPIC_NORMALIZED: logkrama.events.normalized
+      KAFKA_TOPIC_DLQ: logkrama.dlq
+      LOGKRAMA_NODE_ID: processor-1
+      LOGKRAMA_PACKS_DIR: /app/packs
+      LOGKRAMA_DICTIONARIES_DIR: /app/config/dictionaries
+      LOGKRAMA_ENRICHMENT_DIR: /app/enrichment
     volumes:
       - ./packs:/app/packs:ro
       - ./config:/app/config:ro
       - ./enrichment:/app/enrichment:ro
     ports:
       - "9101:9101"
-    networks: [ulpf]
+    networks: [ logkrama ]
 
   control-plane:
     build:
       context: .
       dockerfile: ./deploy/control-plane/Dockerfile
-    image: ulpf/control-plane:latest
-    container_name: ulpf-control-plane
+    image: logkrama/control-plane:latest
+    container_name: logkrama-control-plane
     restart: unless-stopped
     depends_on:
       postgres:
@@ -319,18 +302,18 @@ services:
       minio-init:
         condition: service_completed_successfully
     environment:
-      ULPF_DB_URL: postgresql+psycopg2://ulpf:ulpf_dev_only@postgres:5432/ulpf_meta
-      ULPF_JWT_SECRET: change_me_dev_only
-      ULPF_PRESTO_HOST: presto-coordinator
-      ULPF_PRESTO_PORT: "8080"
-      ULPF_KAFKA_BROKERS: kafka:9092
-      ULPF_MINIO_ENDPOINT: minio:9000
-      ULPF_MINIO_ACCESS_KEY: ulpfadmin
-      ULPF_MINIO_SECRET_KEY: ulpf_dev_only
-      ULPF_MINIO_RAW_BUCKET: ulpf-raw
-      ULPF_REPO_ROOT: /app
-      ULPF_COLLECTOR_METRICS_URL: http://ulpf-collector:9100/metrics
-      ULPF_PROCESSOR_METRICS_URL: http://ulpf-processor:9101/metrics
+      LOGKRAMA_DB_URL: postgresql+psycopg2://logkrama:logkrama_dev_only@postgres:5432/logkrama_meta
+      LOGKRAMA_JWT_SECRET: change_me_dev_only
+      LOGKRAMA_PRESTO_HOST: presto-coordinator
+      LOGKRAMA_PRESTO_PORT: "8080"
+      LOGKRAMA_KAFKA_BROKERS: kafka:9092
+      LOGKRAMA_MINIO_ENDPOINT: minio:9000
+      LOGKRAMA_MINIO_ACCESS_KEY: logkramaadmin
+      LOGKRAMA_MINIO_SECRET_KEY: logkrama_dev_only
+      LOGKRAMA_MINIO_RAW_BUCKET: logkrama-raw
+      LOGKRAMA_REPO_ROOT: /app
+      LOGKRAMA_COLLECTOR_METRICS_URL: http://logkrama-collector:9100/metrics
+      LOGKRAMA_PROCESSOR_METRICS_URL: http://logkrama-processor:9101/metrics
     volumes:
       - ./packs:/app/packs
       - ./testdata:/app/testdata:ro
@@ -338,20 +321,20 @@ services:
       - "8000:8000"
     healthcheck:
       # python:3.11-slim has neither curl nor wget; urllib is stdlib.
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=3)"]
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=3)" ]
       interval: 10s
       timeout: 5s
       retries: 15
-    networks: [ulpf]
+    networks: [ logkrama ]
 
-  ulpf-dlq-bridge:
+  logkrama-dlq-bridge:
     build:
       context: .
       dockerfile: ./deploy/go/Dockerfile
-    image: ulpf/go:latest
-    container_name: ulpf-dlq-bridge
+    image: logkrama/go:latest
+    container_name: logkrama-dlq-bridge
     restart: unless-stopped
-    command: ["/app/ulpf-dlq-bridge"]
+    command: [ "/app/logkrama-dlq-bridge" ]
     depends_on:
       kafka-init:
         condition: service_completed_successfully
@@ -359,39 +342,39 @@ services:
         condition: service_healthy
     environment:
       KAFKA_BROKERS: kafka:9092
-      KAFKA_TOPIC_DLQ: ulpf.dlq
-      ULPF_CONTROL_PLANE_URL: http://control-plane:8000
-    networks: [ulpf]
+      KAFKA_TOPIC_DLQ: logkrama.dlq
+      LOGKRAMA_CONTROL_PLANE_URL: http://control-plane:8000
+    networks: [ logkrama ]
 
   onboarding:
     build:
       context: .
       dockerfile: ./deploy/onboarding/Dockerfile
-    image: ulpf/onboarding:latest
-    container_name: ulpf-onboarding
+    image: logkrama/onboarding:latest
+    container_name: logkrama-onboarding
     restart: unless-stopped
     depends_on:
       control-plane:
         condition: service_healthy
     environment:
-      ULPF_CONTROL_PLANE_URL: http://control-plane:8000
-      ULPF_REPO_ROOT: /app
+      LOGKRAMA_CONTROL_PLANE_URL: http://control-plane:8000
+      LOGKRAMA_REPO_ROOT: /app
     volumes:
       - ./packs:/app/packs
     ports:
       - "8001:8001"
-    networks: [ulpf]
+    networks: [ logkrama ]
 
   console:
     build:
       context: .
       dockerfile: ./deploy/console/Dockerfile
-    image: ulpf/console:latest
-    container_name: ulpf-console
+    image: logkrama/console:latest
+    container_name: logkrama-console
     restart: unless-stopped
     depends_on:
       - control-plane
       - onboarding
     ports:
       - "5173:5173"
-    networks: [ulpf]
+    networks: [ logkrama ]

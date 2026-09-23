@@ -1,5 +1,5 @@
 """DLQ inspection + replay. Rows here are populated by a Kafka consumer
-bridging the ulpf.dlq topic into this table — not yet wired end-to-end
+bridging the logkrama.dlq topic into this table — not yet wired end-to-end
 since it needs a reachable Kafka broker to test against (see
 docs/DECISIONS.md). POST /v1/dlq lets a bridge (or a test) insert one row
 directly in the meantime; the read/replay endpoints are fully real either
@@ -8,7 +8,7 @@ way.
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -50,6 +50,7 @@ def list_dlq(
     reason: str | None = None,
     parser_id: str | None = None,
     resolved: bool | None = None,
+    limit: int | None = Query(default=None, ge=1, le=500),
     db: Session = Depends(get_db),
     _: CurrentUser = Depends(require_role("admin", "engineer", "analyst", "auditor")),
 ):
@@ -60,7 +61,10 @@ def list_dlq(
         q = q.filter(DLQEvent.parser_id == parser_id)
     if resolved is not None:
         q = q.filter(DLQEvent.resolved == resolved)
-    return q.order_by(DLQEvent.occurred_at.desc()).all()
+    q = q.order_by(DLQEvent.occurred_at.desc())
+    if limit is not None:
+        q = q.limit(limit)
+    return q.all()
 
 
 class ReplayRequest(BaseModel):
@@ -79,7 +83,7 @@ def replay(
     user: CurrentUser = Depends(require_role("admin", "engineer")),
 ):
     """Marks the given DLQ events resolved. Actually re-driving them through
-    the pipeline (re-publishing their raw_ref to ulpf.raw.refs) is the
+    the pipeline (re-publishing their raw_ref to logkrama.raw.refs) is the
     natural next step once a parser fix is published — that publish call is
     a one-line Kafka produce once a broker is reachable to test against;
     marking-resolved is what's verifiable without one, so that's what's

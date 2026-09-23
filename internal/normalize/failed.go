@@ -1,6 +1,6 @@
 package normalize
 
-import "github.com/ulpf/ulpf/internal/schema"
+import "github.com/logkrama/logkrama/internal/schema"
 
 // FailedEvent builds the minimal valid UES event for the total-failure
 // path: identify found no parser at all, or the matched parser's pipeline

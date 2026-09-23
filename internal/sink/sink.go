@@ -5,7 +5,7 @@ package sink
 import (
 	"context"
 
-	"github.com/ulpf/ulpf/internal/schema"
+	"github.com/logkrama/logkrama/internal/schema"
 )
 
 // Sink is anything the processor pipeline can route a validated,

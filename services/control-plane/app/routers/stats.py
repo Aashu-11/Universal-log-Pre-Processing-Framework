@@ -69,10 +69,10 @@ def pipeline_stats(
     return PipelineStats(
         collector_reachable=bool(collector_metrics),
         processor_reachable=bool(processor_metrics),
-        events_received_total=collector_metrics.get("ulpf_events_received_total", 0.0),
-        udp_drops_total=collector_metrics.get("ulpf_udp_drops_total", 0.0),
-        ingest_bytes_total=collector_metrics.get("ulpf_ingest_bytes_total", 0.0),
-        dlq_total=processor_metrics.get("ulpf_dlq_total", 0.0),
+        events_received_total=collector_metrics.get("logkrama_events_received_total", 0.0),
+        udp_drops_total=collector_metrics.get("logkrama_udp_drops_total", 0.0),
+        ingest_bytes_total=collector_metrics.get("logkrama_ingest_bytes_total", 0.0),
+        dlq_total=processor_metrics.get("logkrama_dlq_total", 0.0),
     )
 
 
@@ -93,7 +93,7 @@ def source_stats(
 ):
     """Quality score / coverage % per source is a Presto aggregate (Q6 in
     docs/QUERIES.md) once that's reachable; this returns the inventory half
-    from ulpf_meta today.
+    from logkrama_meta today.
     """
     rows = db.query(Source).order_by(Source.name).all()
     return [

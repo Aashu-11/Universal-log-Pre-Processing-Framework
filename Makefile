@@ -13,7 +13,7 @@ up:
 	@echo ""
 	@echo "Service URLs:"
 	@echo "  Presto UI     http://localhost:8080"
-	@echo "  MinIO console http://localhost:9001  (ulpfadmin / ulpf_dev_only)"
+	@echo "  MinIO console http://localhost:9001  (logkramaadmin / logkrama_dev_only)"
 	@echo "  Grafana       http://localhost:3000"
 	@echo "  Prometheus    http://localhost:9090"
 	@echo "  Control API   http://localhost:8000/docs"
@@ -48,7 +48,7 @@ certs:
 	mkdir -p deploy/certs
 	openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
 		-keyout deploy/certs/server.key -out deploy/certs/server.crt \
-		-subj "/CN=ulpf-collector-demo"
+		-subj "/CN=logkrama-collector-demo"
 
 enrichment:
 	go run ./tools/gen-enrichment

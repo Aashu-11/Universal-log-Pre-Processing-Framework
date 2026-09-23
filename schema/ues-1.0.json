@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ulpf.dev/schema/ues-1.0.json",
+  "$id": "https://logkrama.dev/schema/ues-1.0.json",
   "title": "Universal Event Schema (UES) 1.0",
-  "description": "The single normalized event shape every ULPF parser/mapping pair must produce. Namespaces map 1:1 onto the underscored Parquet/Presto column layout produced by internal/schema.Event.ToFlatRow — e.g. src.ip becomes src_ip, network.bytes_total becomes network_bytes_total. `unmapped` is the escape hatch: every extracted field that has no home elsewhere in this schema is retained there, verbatim, so normalization is provably lossless.",
+  "description": "The single normalized event shape every LOGKRAMA parser/mapping pair must produce. Namespaces map 1:1 onto the underscored Parquet/Presto column layout produced by internal/schema.Event.ToFlatRow — e.g. src.ip becomes src_ip, network.bytes_total becomes network_bytes_total. `unmapped` is the escape hatch: every extracted field that has no home elsewhere in this schema is retained there, verbatim, so normalization is provably lossless.",
   "type": "object",
   "required": ["event", "observer", "raw", "lineage", "quality", "unmapped"],
   "properties": {

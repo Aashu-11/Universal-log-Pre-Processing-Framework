@@ -14,8 +14,8 @@ import (
 
 	pq "github.com/parquet-go/parquet-go"
 
-	"github.com/ulpf/ulpf/internal/schema"
-	"github.com/ulpf/ulpf/internal/vault/store"
+	"github.com/logkrama/logkrama/internal/schema"
+	"github.com/logkrama/logkrama/internal/vault/store"
 )
 
 // Config controls partition file rolling. Per CLAUDE.md: roll at 128MB or

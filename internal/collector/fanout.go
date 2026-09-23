@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ulpf/ulpf/internal/vault"
+	"github.com/logkrama/logkrama/internal/vault"
 )
 
 // FanoutPublisher hands every flush to a primary announcer (Kafka in
-// production — the handoff cmd/ulpf-processor depends on to make forward
+// production — the handoff cmd/logkrama-processor depends on to make forward
 // progress) and additionally feeds the same entries to zero or more
 // secondary sinks (e.g. vaultindex.IndexSink, which rolls them into
-// vault.ulpf.raw_index for Presto). A secondary sink is a queryable
+// vault.logkrama.raw_index for Presto). A secondary sink is a queryable
 // convenience, not a durability boundary — vault.Vault + its ledger already
 // are (see docs/DECISIONS.md D-007) — so a secondary's failure is logged
 // and skipped rather than failing the whole batch and killing the pipeline

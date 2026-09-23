@@ -9,17 +9,17 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/ulpf/ulpf/internal/enrich"
-	"github.com/ulpf/ulpf/internal/identify"
-	"github.com/ulpf/ulpf/internal/loggen"
-	"github.com/ulpf/ulpf/internal/normalize"
-	"github.com/ulpf/ulpf/internal/parse"
-	"github.com/ulpf/ulpf/internal/parse/ops"
-	"github.com/ulpf/ulpf/internal/processor"
-	"github.com/ulpf/ulpf/internal/route"
-	"github.com/ulpf/ulpf/internal/schema"
-	"github.com/ulpf/ulpf/internal/telemetry"
-	"github.com/ulpf/ulpf/internal/vault"
+	"github.com/logkrama/logkrama/internal/enrich"
+	"github.com/logkrama/logkrama/internal/identify"
+	"github.com/logkrama/logkrama/internal/loggen"
+	"github.com/logkrama/logkrama/internal/normalize"
+	"github.com/logkrama/logkrama/internal/parse"
+	"github.com/logkrama/logkrama/internal/parse/ops"
+	"github.com/logkrama/logkrama/internal/processor"
+	"github.com/logkrama/logkrama/internal/route"
+	"github.com/logkrama/logkrama/internal/schema"
+	"github.com/logkrama/logkrama/internal/telemetry"
+	"github.com/logkrama/logkrama/internal/vault"
 )
 
 type memSink struct {

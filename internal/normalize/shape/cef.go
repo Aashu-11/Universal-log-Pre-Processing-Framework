@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ulpf/ulpf/internal/schema"
+	"github.com/logkrama/logkrama/internal/schema"
 )
 
 // CEF renders e as one ArcSight CEF line — the reverse direction of
@@ -36,7 +36,7 @@ func CEF(e *schema.Event) string {
 		cefExt("dhost", e.Dst.Hostname),
 		cefExt("shost", e.Src.Hostname),
 		cefExt("cs1", e.Event.Dataset),
-		cefExt("cs1Label", "ulpfDataset"),
+		cefExt("cs1Label", "logkramaDataset"),
 	}
 	var nonEmpty []string
 	for _, e := range ext {

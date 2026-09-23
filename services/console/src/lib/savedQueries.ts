@@ -13,7 +13,7 @@ export const SAVED_QUERIES: SavedQuery[] = [
     explains: "One query, every vendor — before normalization this needed N vendor-specific queries.",
     sql: `SELECT observer_vendor, observer_product, event_action, count(*) AS events,
        sum(network_bytes_total) AS bytes
-FROM lake.ulpf.events
+FROM lake.logkrama.events
 WHERE dt = CAST(current_date AS varchar) AND dst_port = 443
 GROUP BY 1, 2, 3
 ORDER BY events DESC`,
@@ -23,11 +23,11 @@ ORDER BY events DESC`,
     title: "Q2 — Federated hot + cold",
     explains: "Live Kafka tier UNION ALL historical Parquet tier — two storage systems, one logical table.",
     sql: `SELECT 'live' AS tier, src_ip, count(*) AS events
-FROM stream.ulpf.events_normalized
+FROM stream.logkrama.events_normalized
 GROUP BY 1, 2
 UNION ALL
 SELECT 'historical', src_ip, count(*)
-FROM lake.ulpf.events
+FROM lake.logkrama.events
 WHERE dt = CAST(current_date AS varchar)
 GROUP BY 1, 2`,
   },
@@ -37,7 +37,7 @@ GROUP BY 1, 2`,
     explains: "Normalized events (lake) joined to the parser registry (meta/Postgres) in one statement.",
     sql: `SELECT e.observer_vendor, e.lineage_parser_id, p.version AS registered_version,
        p.published_at, count(*) AS events, avg(e.quality_score) AS avg_quality
-FROM lake.ulpf.events e
+FROM lake.logkrama.events e
 JOIN meta.public.parser_registry p ON e.lineage_parser_id = p.parser_id
 WHERE e.dt = CAST(current_date AS varchar)
 GROUP BY 1, 2, 3, 4`,
@@ -48,8 +48,8 @@ GROUP BY 1, 2, 3, 4`,
     explains: "Every event carries a pointer straight back to its sealed segment and Merkle root.",
     sql: `SELECT e.event_id, e.raw_sha256, e.raw_segment_id, e.raw_offset, e.raw_length,
        s.merkle_root, s.prev_root, s.sealed_at_ns
-FROM lake.ulpf.events e
-JOIN vault.ulpf.raw_segments s ON e.raw_segment_id = s.segment_id
+FROM lake.logkrama.events e
+JOIN vault.logkrama.raw_segments s ON e.raw_segment_id = s.segment_id
 WHERE e.event_id = '<event-id>'`,
   },
   {
@@ -59,7 +59,7 @@ WHERE e.event_id = '<event-id>'`,
     sql: `SELECT observer_vendor, count(*) AS events,
        avg(cardinality(unmapped)) AS avg_unmapped_fields,
        sum(CASE WHEN raw_sha256 IS NULL THEN 1 ELSE 0 END) AS missing_raw_ref
-FROM lake.ulpf.events
+FROM lake.logkrama.events
 WHERE dt = CAST(current_date AS varchar)
 GROUP BY 1`,
   },
@@ -69,7 +69,7 @@ GROUP BY 1`,
     explains: "Quality score and partial-parse rate by parser and hour — feeds the Sources page alert.",
     sql: `SELECT lineage_parser_id, hour, avg(quality_score) AS avg_quality,
        sum(CASE WHEN lineage_parse_status = 'partial' THEN 1 ELSE 0 END) AS partials
-FROM lake.ulpf.events
+FROM lake.logkrama.events
 WHERE dt = CAST(current_date AS varchar)
 GROUP BY 1, 2
 ORDER BY 1, 2`,
@@ -83,7 +83,7 @@ ORDER BY 1, 2`,
        count(DISTINCT dst_port) AS distinct_ports,
        sum(network_bytes_out) * 1.0 / nullif(sum(network_bytes_in), 0) AS out_in_ratio,
        sum(CASE WHEN event_action = 'blocked' THEN 1 ELSE 0 END) * 1.0 / count(*) AS block_rate
-FROM lake.ulpf.events
+FROM lake.logkrama.events
 WHERE dt = CAST(current_date AS varchar)
 GROUP BY 1, 2`,
   },

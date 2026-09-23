@@ -17,7 +17,7 @@ from app.config import settings
 from app.draftgen import generate_draft
 from app.importers import import_cef_mapping, import_logstash_grok
 from app.templates import mine_templates
-from app.ulpfctl import UlpfctlError, lint, run_parser
+from app.logkramactl import LogKramactlError, lint, run_parser
 
 router = APIRouter(prefix="/v1/onboarding", tags=["onboarding"])
 
@@ -118,9 +118,9 @@ def analyze(body: AnalyzeRequest):
 
         try:
             lint_ok, lint_output = lint(str(parser_path), settings.repo_root)
-        except UlpfctlError as e:
+        except LogKramactlError as e:
             raise HTTPException(
-                status.HTTP_502_BAD_GATEWAY, f"ulpfctl unavailable: {e}"
+                status.HTTP_502_BAD_GATEWAY, f"logkramactl unavailable: {e}"
             ) from e
 
         results = []
@@ -132,7 +132,7 @@ def analyze(body: AnalyzeRequest):
                     body.sample_lines,
                     settings.repo_root,
                 )
-            except UlpfctlError as e:
+            except LogKramactlError as e:
                 raise HTTPException(
                     status.HTTP_502_BAD_GATEWAY, f"parser run failed: {e.output}"
                 ) from e
@@ -224,7 +224,7 @@ def test_draft(body: TestRequest):
                 body.sample_lines,
                 settings.repo_root,
             )
-        except UlpfctlError as e:
+        except LogKramactlError as e:
             raise HTTPException(
                 status.HTTP_502_BAD_GATEWAY, f"parser run failed: {e.output}"
             ) from e
@@ -319,10 +319,10 @@ class ShapesRequest(BaseModel):
 @router.post("/shapes")
 def shapes(body: ShapesRequest):
     """PS requirement (g): renders one real parsed+mapped event as
-    UES/ECS/OCSF/CEF side by side — see app/ulpfctl.py's run_shapes, which
-    shells to `ulpfctl parser run --shapes`.
+    UES/ECS/OCSF/CEF side by side — see app/logkramactl.py's run_shapes, which
+    shells to `logkramactl parser run --shapes`.
     """
-    from app.ulpfctl import run_shapes
+    from app.logkramactl import run_shapes
 
     with tempfile.TemporaryDirectory() as tmp:
         parser_path = Path(tmp) / "candidate.yaml"
@@ -336,7 +336,7 @@ def shapes(body: ShapesRequest):
                 body.sample_line,
                 settings.repo_root,
             )
-        except UlpfctlError as e:
+        except LogKramactlError as e:
             raise HTTPException(
                 status.HTTP_502_BAD_GATEWAY, f"shapes run failed: {e.output}"
             ) from e

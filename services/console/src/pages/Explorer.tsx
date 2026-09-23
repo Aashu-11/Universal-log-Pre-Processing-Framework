@@ -27,7 +27,7 @@ export function Explorer() {
     setResult(null);
     const start = performance.now();
     try {
-      const resp = await controlPlane.post<QueryResponse>("/v1/query", { sql, catalog: "lake", schema_: "ulpf" });
+      const resp = await controlPlane.post<QueryResponse>("/v1/query", { sql, catalog: "lake", schema_: "logkrama" });
       setResult(resp);
     } catch (err) {
       if (err instanceof ApiError && err.status === 502) {

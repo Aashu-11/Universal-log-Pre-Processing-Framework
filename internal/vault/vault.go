@@ -11,7 +11,7 @@ import (
 
 	"github.com/klauspost/compress/zstd"
 
-	"github.com/ulpf/ulpf/internal/vault/store"
+	"github.com/logkrama/logkrama/internal/vault/store"
 )
 
 // RawRef points at exactly one event's bytes inside a sealed segment.
@@ -83,7 +83,7 @@ func New(st store.Store, cfg Config) *Vault {
 // kill) continues the same day's chain instead of starting a new one at
 // zero. Without this, the first segment sealed after any process restart
 // carries prevRoot=0, which won't match the real previous segment's root —
-// VerifyRange (and `ulpfctl vault verify`) correctly reports that boundary
+// VerifyRange (and `logkramactl vault verify`) correctly reports that boundary
 // as a BROKEN chain even though nothing was actually lost or tampered
 // with. Call once after New, before the first WriteBatch; a day with no
 // prior ledger entries (fresh day, fresh deployment) is a no-op.
@@ -247,7 +247,7 @@ func (v *Vault) segmentKey(dt, segmentID string) string {
 // RetrievalURI builds the s3a:// URI a normalized event's raw.retrieval_uri
 // field should carry for ref, given the bucket the vault's Store is backed
 // by (not tracked by Store itself, since Local has no notion of "bucket" —
-// callers pass it explicitly, e.g. "ulpf-raw" in production).
+// callers pass it explicitly, e.g. "logkrama-raw" in production).
 func RetrievalURI(bucket string, ref RawRef) string {
 	dt := dtFromSegmentID(ref.SegmentID)
 	return fmt.Sprintf("s3a://%s/segments/dt=%s/%s.zst", bucket, dt, ref.SegmentID)

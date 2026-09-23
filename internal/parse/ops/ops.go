@@ -6,8 +6,8 @@ package ops
 import (
 	"fmt"
 
-	"github.com/ulpf/ulpf/internal/parse/dsl"
-	"github.com/ulpf/ulpf/internal/parse/fields"
+	"github.com/logkrama/logkrama/internal/parse/dsl"
+	"github.com/logkrama/logkrama/internal/parse/fields"
 )
 
 // Op is one compiled, ready-to-run pipeline step. Compilation (regex

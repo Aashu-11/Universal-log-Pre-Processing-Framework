@@ -9,7 +9,7 @@ import (
 // bytes, keyed by segment ID. Read() populates and consults it: without
 // this, reading N events out of the same segment cost N redundant
 // full-segment object-store fetches and N redundant zstd decompressions —
-// the actual bottleneck behind cmd/ulpf-processor's per-event consume loop
+// the actual bottleneck behind cmd/logkrama-processor's per-event consume loop
 // running orders of magnitude slower than the collector's write throughput,
 // since every event in a segment re-downloaded and re-decompressed the
 // whole segment just to read its own few bytes out of it. Bounded by total

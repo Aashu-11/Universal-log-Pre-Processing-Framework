@@ -6,8 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-os.environ.setdefault("ULPF_DB_URL", "sqlite:///:memory:")
-os.environ.setdefault("ULPF_JWT_SECRET", "test-secret")
+os.environ.setdefault("LOGKRAMA_DB_URL", "sqlite:///:memory:")
+os.environ.setdefault("LOGKRAMA_JWT_SECRET", "test-secret")
 
 from app.db import Base, get_db  # noqa: E402
 from app.main import app  # noqa: E402

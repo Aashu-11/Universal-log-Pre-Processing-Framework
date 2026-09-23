@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ulpf/ulpf/internal/parse/dsl"
-	"github.com/ulpf/ulpf/internal/parse/fields"
+	"github.com/logkrama/logkrama/internal/parse/dsl"
+	"github.com/logkrama/logkrama/internal/parse/fields"
 )
 
 func init() {
@@ -102,7 +102,7 @@ func expandGrok(pattern string) (string, error) {
 }
 
 // rejectUnsafeRegex is a defense-in-depth lint check for
-// `ulpfctl parser lint`: Go's RE2 engine can't actually catastrophically
+// `logkramactl parser lint`: Go's RE2 engine can't actually catastrophically
 // backtrack, but nested quantifiers like (a+)+ are still a readability/
 // intent smell worth flagging before a parser ships.
 func rejectUnsafeRegex(pattern string) error {

@@ -1,4 +1,4 @@
-// Command loggen emits realistic, syntactically correct logs for ULPF's
+// Command loggen emits realistic, syntactically correct logs for LOGKRAMA's
 // target vendors at a configurable EPS, generated from documented format
 // templates — never copied from real logs — through the real ingest
 // protocols (UDP/TCP/HTTP), the way every demo in this repo gets its data.
@@ -14,7 +14,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ulpf/ulpf/internal/loggen"
+	"github.com/logkrama/logkrama/internal/loggen"
 )
 
 func main() {

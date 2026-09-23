@@ -224,7 +224,7 @@ export function Pipeline() {
             <TransformStep index="05" title="Enrich" accent="#5285f5" rows={[["risk", latestEvent.enrich_risk_score.toFixed(1)], ["country", latestEvent.enrich_src_geo_country || "—"], ["ASN org", compact(latestEvent.enrich_src_as_org)]]} />
             <TransformStep index="06" title="Route" accent="#3b8ff7" rows={[["lake", `${latestEvent.dt}/${latestEvent.hour}`], ["vendor", latestEvent.vendor], ["stream", "Kafka + Parquet"]]} />
           </div>
-          <p className="mt-4 text-[9.5px] leading-relaxed text-[var(--color-text-muted)]">Every value above comes from the latest row in <span className="font-mono-data text-[var(--color-text-secondary)]">lake.ulpf.events</span>. This view exposes processing lineage instead of reducing the pipeline to a single green status.</p>
+          <p className="mt-4 text-[9.5px] leading-relaxed text-[var(--color-text-muted)]">Every value above comes from the latest row in <span className="font-mono-data text-[var(--color-text-secondary)]">lake.logkrama.events</span>. This view exposes processing lineage instead of reducing the pipeline to a single green status.</p>
         </div> : <EmptyChart label="No normalized event is available yet" />}
       </Card>
 

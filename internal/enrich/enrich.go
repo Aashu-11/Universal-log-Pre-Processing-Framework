@@ -6,8 +6,8 @@ package enrich
 import (
 	"time"
 
-	"github.com/ulpf/ulpf/internal/schema"
-	"github.com/ulpf/ulpf/internal/telemetry"
+	"github.com/logkrama/logkrama/internal/schema"
+	"github.com/logkrama/logkrama/internal/telemetry"
 )
 
 // Enricher adds context to one event. Enrich must never make a network

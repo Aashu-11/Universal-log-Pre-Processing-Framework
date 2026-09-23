@@ -5,6 +5,7 @@ ps`) and returns exactly what came back, including failures. Nothing here
 is allowed to hardcode a PASS — see CLAUDE.md.
 """
 
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -13,7 +14,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from app.config import settings
-from app.ulpfctl import UlpfctlError, _binary_path
+from app.logkramactl import LogKramactlError, _binary_path
 
 router = APIRouter(prefix="/v1/reviewer", tags=["reviewer"])
 
@@ -25,10 +26,12 @@ class ProofResult(BaseModel):
     output: str
 
 
-def _run(args: list[str], cwd: str, timeout: int = 60) -> tuple[bool, str]:
+def _run(
+    args: list[str], cwd: str, timeout: int = 60, env: dict[str, str] | None = None
+) -> tuple[bool, str]:
     try:
         result = subprocess.run(
-            args, cwd=cwd, capture_output=True, text=True, timeout=timeout
+            args, cwd=cwd, capture_output=True, text=True, timeout=timeout, env=env
         )
     except FileNotFoundError as e:
         return False, f"command not found: {e}"
@@ -40,12 +43,12 @@ def _run(args: list[str], cwd: str, timeout: int = 60) -> tuple[bool, str]:
 @router.get("/parser-fixtures", response_model=ProofResult)
 def parser_fixtures() -> ProofResult:
     """(b) Parse source attributes — runs every shipped parser's golden
-    fixtures for real via `ulpfctl parser test --all`."""
+    fixtures for real via `logkramactl parser test --all`."""
     try:
         binary = _binary_path()
-    except UlpfctlError as e:
+    except LogKramactlError as e:
         return ProofResult(
-            requirement="b", passed=False, summary="ulpfctl not built", output=str(e)
+            requirement="b", passed=False, summary="logkramactl not built", output=str(e)
         )
     ok, output = _run([binary, "parser", "test", "--all"], settings.repo_root)
     summary = output.strip().splitlines()[-1] if output.strip() else "no output"
@@ -63,6 +66,8 @@ def airgap_check() -> ProofResult:
         return ProofResult(
             requirement="j", passed=False, summary="go toolchain not found", output=""
         )
+    go_env = dict(os.environ)
+    go_env.setdefault("GOCACHE", str(Path(settings.repo_root) / ".cache" / "go-build"))
     ok, output = _run(
         [
             go_binary,
@@ -73,6 +78,7 @@ def airgap_check() -> ProofResult:
             "-v",
         ],
         settings.repo_root,
+        env=go_env,
     )
     summary = "TestNoNetworkImports PASS" if ok else "TestNoNetworkImports FAILED"
     return ProofResult(requirement="j", passed=ok, summary=summary, output=output)

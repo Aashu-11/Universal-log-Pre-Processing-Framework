@@ -3,8 +3,8 @@ package ops
 import (
 	"testing"
 
-	"github.com/ulpf/ulpf/internal/parse/dsl"
-	"github.com/ulpf/ulpf/internal/parse/fields"
+	"github.com/logkrama/logkrama/internal/parse/dsl"
+	"github.com/logkrama/logkrama/internal/parse/fields"
 )
 
 func run(t *testing.T, spec dsl.Operator, deps Deps, raw string, seed map[string]string) *fields.Fields {

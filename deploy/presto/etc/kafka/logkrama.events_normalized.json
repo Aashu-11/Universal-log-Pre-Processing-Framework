@@ -1,0 +1,56 @@
+{
+  "tableName": "events_normalized",
+  "schemaName": "logkrama",
+  "topicName": "logkrama.events.normalized",
+  "key": {
+    "dataFormat": "raw",
+    "fields": [
+      { "name": "_key", "dataFormat": "varchar", "type": "VARCHAR", "mapping": "0" }
+    ]
+  },
+  "message": {
+    "dataFormat": "json",
+    "fields": [
+      { "name": "event_id", "mapping": "event_id", "type": "VARCHAR" },
+      { "name": "event_kind", "mapping": "event_kind", "type": "VARCHAR" },
+      { "name": "event_category", "mapping": "event_category", "type": "VARCHAR" },
+      { "name": "event_type", "mapping": "event_type", "type": "VARCHAR" },
+      { "name": "event_action", "mapping": "event_action", "type": "VARCHAR" },
+      { "name": "event_outcome", "mapping": "event_outcome", "type": "VARCHAR" },
+      { "name": "event_severity_id", "mapping": "event_severity_id", "type": "BIGINT" },
+      { "name": "event_dataset", "mapping": "event_dataset", "type": "VARCHAR" },
+      { "name": "event_observed_at", "mapping": "event_observed_at", "type": "BIGINT" },
+      { "name": "event_ingested_at", "mapping": "event_ingested_at", "type": "BIGINT" },
+      { "name": "observer_vendor", "mapping": "observer_vendor", "type": "VARCHAR" },
+      { "name": "observer_product", "mapping": "observer_product", "type": "VARCHAR" },
+      { "name": "observer_type", "mapping": "observer_type", "type": "VARCHAR" },
+      { "name": "observer_hostname", "mapping": "observer_hostname", "type": "VARCHAR" },
+      { "name": "src_ip", "mapping": "src_ip", "type": "VARCHAR" },
+      { "name": "src_port", "mapping": "src_port", "type": "BIGINT" },
+      { "name": "src_zone", "mapping": "src_zone", "type": "VARCHAR" },
+      { "name": "dst_ip", "mapping": "dst_ip", "type": "VARCHAR" },
+      { "name": "dst_port", "mapping": "dst_port", "type": "BIGINT" },
+      { "name": "dst_zone", "mapping": "dst_zone", "type": "VARCHAR" },
+      { "name": "network_transport", "mapping": "network_transport", "type": "VARCHAR" },
+      { "name": "network_direction", "mapping": "network_direction", "type": "VARCHAR" },
+      { "name": "network_bytes_in", "mapping": "network_bytes_in", "type": "BIGINT" },
+      { "name": "network_bytes_out", "mapping": "network_bytes_out", "type": "BIGINT" },
+      { "name": "network_bytes_total", "mapping": "network_bytes_total", "type": "BIGINT" },
+      { "name": "network_duration_ms", "mapping": "network_duration_ms", "type": "BIGINT" },
+      { "name": "actor_user", "mapping": "actor_user", "type": "VARCHAR" },
+      { "name": "threat_signature_id", "mapping": "threat_signature_id", "type": "VARCHAR" },
+      { "name": "threat_category", "mapping": "threat_category", "type": "VARCHAR" },
+      { "name": "enrich_src_geo_country", "mapping": "enrich_src_geo_country", "type": "VARCHAR" },
+      { "name": "enrich_dst_geo_country", "mapping": "enrich_dst_geo_country", "type": "VARCHAR" },
+      { "name": "enrich_src_is_internal", "mapping": "enrich_src_is_internal", "type": "BOOLEAN" },
+      { "name": "enrich_ioc_match", "mapping": "enrich_ioc_match", "type": "BOOLEAN" },
+      { "name": "enrich_risk_score", "mapping": "enrich_risk_score", "type": "DOUBLE" },
+      { "name": "raw_sha256", "mapping": "raw_sha256", "type": "VARCHAR" },
+      { "name": "raw_segment_id", "mapping": "raw_segment_id", "type": "VARCHAR" },
+      { "name": "lineage_parser_id", "mapping": "lineage_parser_id", "type": "VARCHAR" },
+      { "name": "lineage_parser_version", "mapping": "lineage_parser_version", "type": "VARCHAR" },
+      { "name": "lineage_parse_status", "mapping": "lineage_parse_status", "type": "VARCHAR" },
+      { "name": "quality_score", "mapping": "quality_score", "type": "DOUBLE" }
+    ]
+  }
+}

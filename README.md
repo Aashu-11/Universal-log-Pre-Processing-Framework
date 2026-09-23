@@ -1,8 +1,8 @@
-# LogKrama — Universal Log Pre-processing Framework
+# LogKrama — Log Pre-Processing Platform
 
 > **Ingest anything. Lose nothing. Prove everything. Onboard a new source in minutes.**
 
-A vendor-neutral log pre-processing platform for perimeter network devices. ULPF ingests logs in
+A vendor-neutral log pre-processing platform for perimeter network devices. LOGKRAMA ingests logs in
 any format over any protocol, preserves the **original bytes** in a cryptographically chained Raw
 Vault *before* parsing, normalizes them into a single **Universal Event Schema (UES)**, enriches
 them entirely offline, and exposes raw bytes, normalized events, live streams and metadata through
@@ -40,13 +40,13 @@ them entirely offline, and exposes raw bytes, normalized events, live streams an
 
 Security teams running firewalls, IDS/IPS and proxies from different vendors end up with N
 incompatible log formats, N sets of queries, and no way to prove that what landed in the SIEM is
-what the device actually emitted. ULPF solves that with four hard guarantees baked into the
+what the device actually emitted. LOGKRAMA solves that with four hard guarantees baked into the
 architecture:
 
 | Guarantee | How it is enforced in code |
 |---|---|
 | **Lossless preservation** | Raw bytes are written to the Raw Vault *before* any parsing. Nothing in the pipeline mutates them. Every normalized event carries `raw.sha256`, `raw.segment_id`, `raw.offset`, `raw.length` and `raw.retrieval_uri`. |
-| **Provable integrity** | Every vault segment is Merkle-hashed, chained to the previous segment's root, and recorded in a per-day append-only ledger. `ulpfctl vault verify` / `prove` re-derive the chain and emit per-event inclusion proofs. |
+| **Provable integrity** | Every vault segment is Merkle-hashed, chained to the previous segment's root, and recorded in a per-day append-only ledger. `logkramactl vault verify` / `prove` re-derive the chain and emit per-event inclusion proofs. |
 | **Zero field loss** | Every extracted field either lands on a UES path or is retained verbatim in `unmapped map<varchar,varchar>`. Events that fail to parse are still emitted (as `FailedEvent`) and are still queryable — nothing is ever dropped. |
 | **Air-gapped runtime** | All enrichment (GeoIP, ASN, IOC, MITRE, asset, identity) ships as CSV files in the repo. A test (`TestNoNetworkImports`) statically proves the enrichment package imports no network-capable package. |
 
@@ -57,8 +57,8 @@ at runtime via an `fsnotify` watch on `packs/`.
 
 ## Features
 
-### Ingest (`ulpf-collector`)
-- **Syslog UDP** — non-blocking; a full buffer drops immediately and *visibly* (`ulpf_udp_drops_total`) rather than building an unbounded queue.
+### Ingest (`logkrama-collector`)
+- **Syslog UDP** — non-blocking; a full buffer drops immediately and *visibly* (`logkrama_udp_drops_total`) rather than building an unbounded queue.
 - **Syslog TCP** — octet-counting/newline framing, backpressure by pausing reads instead of dropping.
 - **HTTP bulk** — `POST /v1/ingest`, NDJSON (optionally gzipped), 32 MB body cap, token-bucket rate limiting, `429` on overflow. Lines are stored byte-for-byte, never re-serialized.
 - **File tail** — directory watcher with a persisted byte-offset checkpoint, so a restart neither skips nor duplicates lines.
@@ -90,7 +90,7 @@ scorer reads fields the earlier stages set.
 ### Validate & Route
 - JSON-Schema validation against the embedded `schema/ues-1.0.json`, plus port range, IP parseability and ±1-year timestamp-skew checks.
 - `quality.score = (mapped_fields / expected_fields) × parse_confidence`, clamped to `[0,1]`.
-- Router writes **every** event to the lake and the live stream regardless of outcome; violations *additionally* get a DLQ copy tagged with a reason code and bump `ulpf_dlq_total{reason}`.
+- Router writes **every** event to the lake and the live stream regardless of outcome; violations *additionally* get a DLQ copy tagged with a reason code and bump `logkrama_dlq_total{reason}`.
 
 ### Query (PrestoDB federation)
 Four catalogs, one SQL dialect:
@@ -122,7 +122,7 @@ and these endpoint groups:
 | `POST /v1/query` | Read-only Presto proxy — `SELECT`/`EXPLAIN`/`SHOW` allowlist enforced **before** any connection is opened |
 | `/v1/reviewer/*` | "Prove it" endpoints that shell out to real checks and return real output, pass or fail |
 
-Parser publish deliberately **shells out to the compiled `ulpfctl` binary** for DSL linting,
+Parser publish deliberately **shells out to the compiled `logkramactl` binary** for DSL linting,
 unsafe-regex rejection and golden-fixture validation — one validator shared by Go and Python instead
 of two implementations that can silently diverge.
 
@@ -149,9 +149,9 @@ Eight authenticated pages plus a login screen:
 | **Reviewer Mode** | One "Prove it" button per requirement (a)–(k), each wired to a real backend check |
 
 ### Observability
-Prometheus metrics from both data-plane binaries (`ulpf_events_received_total`, `ulpf_udp_drops_total`,
-`ulpf_ingest_bytes_total`, `ulpf_spool_depth`, `ulpf_vault_write_duration_seconds`,
-`ulpf_parse_duration_seconds`, `ulpf_enrich_duration_seconds`, `ulpf_dlq_total`), a provisioned
+Prometheus metrics from both data-plane binaries (`logkrama_events_received_total`, `logkrama_udp_drops_total`,
+`logkrama_ingest_bytes_total`, `logkrama_spool_depth`, `logkrama_vault_write_duration_seconds`,
+`logkrama_parse_duration_seconds`, `logkrama_enrich_duration_seconds`, `logkrama_dlq_total`), a provisioned
 Grafana dashboard, and `/debug/pprof/*` on the collector's metrics listener for stall diagnosis.
 
 ---
@@ -167,7 +167,7 @@ Grafana dashboard, and `/debug/pprof/*` on the collector's metrics listener for 
 | Stream buffer | Apache Kafka 3.7.0 — **KRaft mode, no ZooKeeper** | Apache-2.0 |
 | Table format | Parquet on MinIO via Hive external tables | Apache-2.0 |
 | Control plane | Python 3.11 + FastAPI + Pydantic v2 + SQLAlchemy 2 | MIT/BSD |
-| Metadata DB | PostgreSQL 16 (`ulpf_meta`) | PostgreSQL License |
+| Metadata DB | PostgreSQL 16 (`logkrama_meta`) | PostgreSQL License |
 | Template mining | Drain3 | MIT |
 | Console | React 19 + TypeScript (`strict`) + Vite + Tailwind v4 + Recharts + Oxlint | MIT |
 | Metrics | Prometheus + Grafana OSS | Apache-2.0 / AGPL-3.0 |
@@ -197,7 +197,7 @@ INGEST → PRESERVE → IDENTIFY → PARSE → NORMALIZE → ENRICH → VALIDATE
                   syslog UDP/TCP · HTTP bulk NDJSON · file tail
                                     │
                           ┌─────────▼──────────┐
-                          │   ulpf-collector   │  INGEST + PRESERVE
+                          │   logkrama-collector   │  INGEST + PRESERVE
                           │  buffer → spool    │
                           └────┬──────────┬────┘
                                │          │
@@ -210,13 +210,13 @@ INGEST → PRESERVE → IDENTIFY → PARSE → NORMALIZE → ENRICH → VALIDATE
                     └──────────┬─────────┘          │
                                │  read + SHA verify │
                           ┌────▼────────────────────▼────┐
-                          │       ulpf-processor         │
+                          │       logkrama-processor         │
                           │ IDENTIFY→PARSE→NORMALIZE→    │
                           │ ENRICH→VALIDATE→ROUTE        │
                           └──┬──────────┬──────────┬─────┘
                              │          │          │
                   Parquet ───┘          │          └─── DLQ topic
-                  (ulpf-lake)     normalized topic
+                  (logkrama-lake)     normalized topic
                              │          │          │
                        ┌─────▼──────────▼──────────▼─────┐
                        │  PrestoDB  lake · stream · meta │
@@ -236,9 +236,9 @@ INGEST → PRESERVE → IDENTIFY → PARSE → NORMALIZE → ENRICH → VALIDATE
 
 The collector returns from `WriteBatch` as soon as bytes are appended to the open segment (required
 for high EPS) and publishes each event's `RawRef` to Kafka immediately. The segment itself seals on
-its own schedule — 64 MB or `ULPF_VAULT_SEGMENT_MAX_SECONDS`, whichever first — so a ref can reach
+its own schedule — 64 MB or `LOGKRAMA_VAULT_SEGMENT_MAX_SECONDS`, whichever first — so a ref can reach
 Kafka up to a full seal window before its bytes are readable. The processor therefore retries vault
-reads with exponential backoff up to `ULPF_VAULT_READ_RETRY_SECONDS` (default **330s** = the 300s
+reads with exponential backoff up to `LOGKRAMA_VAULT_READ_RETRY_SECONDS` (default **330s** = the 300s
 default seal window + 30s margin), and the collector runs a wall-clock seal ticker so a quiet source
 can't leave a segment open forever. Both of these exist because the naive versions silently dropped
 valid events under real load — see `docs/DECISIONS.md` D-015 and D-018.
@@ -247,7 +247,7 @@ valid events under real load — see `docs/DECISIONS.md` D-015 and D-018.
 
 Durability begins at **segment seal**, not at `WriteBatch` return. Killing the collector
 *ungracefully* loses whatever sits in the still-open segment; `SIGTERM`/`SIGINT` seals before exit.
-Deployments wanting a tighter crash-loss window should lower `ULPF_VAULT_SEGMENT_MAX_BYTES` /
+Deployments wanting a tighter crash-loss window should lower `LOGKRAMA_VAULT_SEGMENT_MAX_BYTES` /
 `_SECONDS` rather than fsync per event. Documented in full as `docs/DECISIONS.md` D-007.
 
 ---
@@ -295,17 +295,17 @@ init jobs that create the MinIO buckets and Kafka topics.
 | Control API (OpenAPI docs) | http://localhost:8000/docs | JWT via `/v1/auth/login` |
 | Onboarding API | http://localhost:8001/docs | — |
 | Presto UI | http://localhost:8080 | — |
-| MinIO console | http://localhost:9001 | `ulpfadmin` / `ulpf_dev_only` |
+| MinIO console | http://localhost:9001 | `logkramaadmin` / `logkrama_dev_only` |
 | Grafana | http://localhost:3000 | anonymous viewer |
 | Prometheus | http://localhost:9090 | — |
 
 > All credentials in `.env.example` and `docker-compose.yml` are dev-only placeholders. Change them
-> before any non-local deployment, and set `ULPF_JWT_SECRET` / `ULPF_ADMIN_PASSWORD`.
+> before any non-local deployment, and set `LOGKRAMA_JWT_SECRET` / `LOGKRAMA_ADMIN_PASSWORD`.
 
 ### 3. Apply the Presto DDL
 
 ```bash
-docker exec -i ulpf-presto presto-cli --server localhost:8080 < schema/presto/ddl.sql
+docker exec -i logkrama-presto presto-cli --server localhost:8080 < schema/presto/ddl.sql
 ```
 
 ### 4. Verify
@@ -321,10 +321,10 @@ Unprivileged by default so containers need no `root` / `CAP_NET_BIND_SERVICE`
 
 | Protocol | Default | Env var |
 |---|---|---|
-| Syslog UDP | `5514` | `ULPF_SYSLOG_UDP_ADDR` |
-| Syslog TCP | `6601` | `ULPF_SYSLOG_TCP_ADDR` |
-| Syslog TLS | `6614` | `ULPF_SYSLOG_TLS_ADDR` |
-| HTTP bulk | `8088` | `ULPF_HTTP_ADDR` |
+| Syslog UDP | `5514` | `LOGKRAMA_SYSLOG_UDP_ADDR` |
+| Syslog TCP | `6601` | `LOGKRAMA_SYSLOG_TCP_ADDR` |
+| Syslog TLS | `6614` | `LOGKRAMA_SYSLOG_TLS_ADDR` |
+| HTTP bulk | `8088` | `LOGKRAMA_HTTP_ADDR` |
 | Collector metrics | `9100` | `--metrics-addr` |
 | Processor metrics | `9101` | `--metrics-addr` |
 
@@ -337,8 +337,8 @@ ingest → preserve → verify path is fully exercisable with nothing but Go ins
 ```bash
 # Go data plane + CLI
 go build ./...
-go build -o bin/ulpfctl ./cmd/ulpfctl        # required by the control-plane parser tests
-go run ./cmd/ulpf-collector                  # local vault at ./data/vault
+go build -o bin/logkramactl ./cmd/logkramactl        # required by the control-plane parser tests
+go run ./cmd/logkrama-collector                  # local vault at ./data/vault
 
 # Control plane (SQLite dev fallback, see DECISIONS.md D-004)
 cd services/control-plane && pip install -r requirements.txt -r requirements-dev.txt
@@ -379,24 +379,24 @@ go run ./tools/loggen --proto=http --port=8088 --eps=1000
 go run ./tools/loggen --proto=tcp  --port=6601 --anomaly=port-scan     # feeds the Q7 demo
 ```
 
-### Operator CLI — `ulpfctl`
+### Operator CLI — `logkramactl`
 
 ```bash
 # Chain of custody
-ulpfctl vault verify --from 2026-09-09 --to 2026-09-09     # PASS/FAIL table per segment
-ulpfctl vault prove  --segment-id <id> --offset N --length N --sha256 <hex>
-ulpfctl vault read   --segment-id <id> --offset N --length N --sha256 <hex> --json
-echo 'a raw log line' | ulpfctl vault write
-ulpfctl vault export-index --from 2026-09-09 --to 2026-09-09   # populates vault.ulpf.raw_segments
+logkramactl vault verify --from 2026-09-09 --to 2026-09-09     # PASS/FAIL table per segment
+logkramactl vault prove  --segment-id <id> --offset N --length N --sha256 <hex>
+logkramactl vault read   --segment-id <id> --offset N --length N --sha256 <hex> --json
+echo 'a raw log line' | logkramactl vault write
+logkramactl vault export-index --from 2026-09-09 --to 2026-09-09   # populates vault.logkrama.raw_segments
 
 # Parsers
-ulpfctl parser test --all                     # golden-fixture regression (75 fixtures)
-ulpfctl parser lint packs/<v>/<p>/<c>.yaml    # DSL validation + unsafe-regex rejection
-cat sample.log | ulpfctl parser run --parser draft.yaml --mapping draft.mapping.yaml --shapes
+logkramactl parser test --all                     # golden-fixture regression (75 fixtures)
+logkramactl parser lint packs/<v>/<p>/<c>.yaml    # DSL validation + unsafe-regex rejection
+cat sample.log | logkramactl parser run --parser draft.yaml --mapping draft.mapping.yaml --shapes
 
 # Presto / demo data
-ulpfctl partitions sync                        # register new dt=/hour=/vendor= partitions
-ulpfctl gen sonicwall --count 200              # a format no shipped pack has ever seen
+logkramactl partitions sync                        # register new dt=/hour=/vendor= partitions
+logkramactl gen sonicwall --count 200              # a format no shipped pack has ever seen
 ```
 
 ### Onboard a new source in minutes
@@ -419,15 +419,15 @@ Rollback is one call: `POST /v1/parsers/{parser_id}/rollback`.
 -- Chain of custody: normalized event → its exact original bytes → the Merkle root that seals them
 SELECT e.event_id, e.raw_sha256, e.raw_segment_id, e.raw_offset, e.raw_length,
        s.merkle_root, s.prev_root, s.sealed_at_ns
-FROM lake.ulpf.events e
-JOIN vault.ulpf.raw_segments s ON e.raw_segment_id = s.segment_id
+FROM lake.logkrama.events e
+JOIN vault.logkrama.raw_segments s ON e.raw_segment_id = s.segment_id
 WHERE e.event_id = ?;
 
 -- Losslessness: missing_raw_ref must be 0, every vendor, every day
 SELECT observer_vendor, count(*) AS events,
        avg(cardinality(unmapped)) AS avg_unmapped_fields,
        sum(CASE WHEN raw_sha256 IS NULL THEN 1 ELSE 0 END) AS missing_raw_ref
-FROM lake.ulpf.events
+FROM lake.logkrama.events
 WHERE dt = current_date
 GROUP BY 1;
 ```
@@ -454,9 +454,9 @@ push and PR.
 ```
 .
 ├── cmd/
-│   ├── ulpf-collector/       # INGEST + PRESERVE binary (listeners, vault, ref publish)
-│   ├── ulpf-processor/       # IDENTIFY→ROUTE binary (Kafka consumer)
-│   └── ulpfctl/              # operator CLI: vault, parser, partitions, gen
+│   ├── logkrama-collector/       # INGEST + PRESERVE binary (listeners, vault, ref publish)
+│   ├── logkrama-processor/       # IDENTIFY→ROUTE binary (Kafka consumer)
+│   └── logkramactl/              # operator CLI: vault, parser, partitions, gen
 ├── internal/
 │   ├── collector/            # pipeline, envelope, Kafka/fanout publishers
 │   │   ├── batch/            # bounded ring buffer + disk-backed spool
@@ -481,7 +481,7 @@ push and PR.
 │   └── loggen/               # vendor log generators (shared by CLI + tools)
 ├── schema/
 │   ├── ues-1.0.json          # Universal Event Schema (embedded in the binary)
-│   └── presto/ddl.sql        # lake.ulpf.events, vault.ulpf.raw_{segments,index}
+│   └── presto/ddl.sql        # lake.logkrama.events, vault.logkrama.raw_{segments,index}
 ├── packs/                    # parser + mapping YAML artifacts (data, not code)
 │   ├── paloalto/panos/       ├── fortinet/fortigate/
 │   ├── cisco/asa/            └── acme/firewall/traffic/
@@ -498,7 +498,7 @@ push and PR.
 ├── deploy/                   # Dockerfiles, Presto catalogs, Hive, Grafana, Postgres init
 ├── testdata/golden/          # 75 golden fixtures (25 × 3 vendors)
 ├── scripts/                  # demo.sh, verify.sh
-├── docs/                     # BUILD_PLAN.md, DECISIONS.md, QUERIES.md, LICENSES.md
+├── docs/                     # BUILD_PLAN.md, DECISIONS.md, QUERIES.md, LICENSES.md, LOGVERSE.md
 ├── docker-compose.yml
 └── Makefile
 ```
@@ -507,7 +507,6 @@ push and PR.
 
 ## Screenshots / Demo
 
-
+<!-- TODO: add a LogVerse screenshot here (console → LogVerse, live scene with a few particles in flight) once captured from a running stack. Not committed yet — see docs/LOGVERSE.md for the feature writeup and demo flow in the meantime. -->
 
 ---
-

@@ -68,7 +68,7 @@ export function FullRecordPanel({ eventId }: { eventId: string }) {
       {!open && (
         <p className="text-[11.5px] text-[var(--color-text-muted)]">
           This event's complete normalized record — ~65 UES columns across every mandatory namespace, plus{" "}
-          <code>unmapped</code>, exactly as it sits in <code>lake.ulpf.events</code>. Same shape no matter which
+          <code>unmapped</code>, exactly as it sits in <code>lake.logkrama.events</code>. Same shape no matter which
           vendor produced the raw log.
         </p>
       )}

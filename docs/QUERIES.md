@@ -19,7 +19,7 @@ queries against N different log shapes.
 ```sql
 SELECT observer_vendor, observer_product, event_action, count(*) AS events,
        sum(network_bytes_total) AS bytes
-FROM lake.ulpf.events
+FROM lake.logkrama.events
 WHERE dt = CAST(current_date AS varchar) AND dst_port = 443
 GROUP BY 1, 2, 3
 ORDER BY events DESC;
@@ -33,11 +33,11 @@ storage systems as one logical table.
 
 ```sql
 SELECT 'live' AS tier, src_ip, count(*) AS events
-FROM stream.ulpf.events_normalized
+FROM stream.logkrama.events_normalized
 GROUP BY 1, 2
 UNION ALL
 SELECT 'historical' AS tier, src_ip, count(*) AS events
-FROM lake.ulpf.events
+FROM lake.logkrama.events
 WHERE dt = CAST(current_date AS varchar)
 GROUP BY 1, 2;
 ```
@@ -53,7 +53,7 @@ not an application-layer join.
 SELECT e.observer_vendor, e.lineage_parser_id, p.version AS registered_version,
        p.published_at, count(*) AS events,
        avg(e.quality_score) AS avg_quality
-FROM lake.ulpf.events e
+FROM lake.logkrama.events e
 JOIN meta.public.parser_registry p
   ON e.lineage_parser_id = p.parser_id
 WHERE e.dt = CAST(current_date AS varchar)
@@ -63,7 +63,7 @@ GROUP BY 1, 2, 3, 4;
 ## Q4 — Traceability / chain of custody
 
 Every event carries a pointer straight back to its sealed segment and
-Merkle root — `vault.ulpf.raw_segments` records `sealed_at_ns` (epoch
+Merkle root — `vault.logkrama.raw_segments` records `sealed_at_ns` (epoch
 nanoseconds, consistent with every other timestamp in this schema) rather
 than a SQL `TIMESTAMP`, the one column name that differs from the
 illustrative build-plan version of this query.
@@ -71,8 +71,8 @@ illustrative build-plan version of this query.
 ```sql
 SELECT e.event_id, e.raw_sha256, e.raw_segment_id, e.raw_offset, e.raw_length,
        s.merkle_root, s.prev_root, s.sealed_at_ns
-FROM lake.ulpf.events e
-JOIN vault.ulpf.raw_segments s ON e.raw_segment_id = s.segment_id
+FROM lake.logkrama.events e
+JOIN vault.logkrama.raw_segments s ON e.raw_segment_id = s.segment_id
 WHERE e.event_id = ?;
 ```
 
@@ -86,7 +86,7 @@ SELECT observer_vendor,
        count(*) AS events,
        avg(cardinality(unmapped)) AS avg_unmapped_fields,
        sum(CASE WHEN raw_sha256 IS NULL THEN 1 ELSE 0 END) AS missing_raw_ref
-FROM lake.ulpf.events
+FROM lake.logkrama.events
 WHERE dt = CAST(current_date AS varchar)
 GROUP BY 1;
 ```
@@ -101,7 +101,7 @@ page.
 SELECT lineage_parser_id, hour,
        avg(quality_score) AS avg_quality,
        sum(CASE WHEN lineage_parse_status = 'partial' THEN 1 ELSE 0 END) AS partials
-FROM lake.ulpf.events
+FROM lake.logkrama.events
 WHERE dt = CAST(current_date AS varchar)
 GROUP BY 1, 2
 ORDER BY 1, 2;
@@ -120,7 +120,7 @@ SELECT src_ip,
        count(DISTINCT dst_port) AS distinct_ports,
        sum(network_bytes_out) * 1.0 / nullif(sum(network_bytes_in), 0) AS out_in_ratio,
        sum(CASE WHEN event_action = 'blocked' THEN 1 ELSE 0 END) * 1.0 / count(*) AS block_rate
-FROM lake.ulpf.events
+FROM lake.logkrama.events
 WHERE dt = CAST(current_date AS varchar)
 GROUP BY 1, 2;
 ```

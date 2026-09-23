@@ -1,4 +1,4 @@
-# ULPF — Universal Log Pre-processing Framework
+# LOGKRAMA — LogKrama
 
 ## What we are building
 A system that ingests logs from any perimeter network device in any format,

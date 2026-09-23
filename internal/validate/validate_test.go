@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ulpf/ulpf/internal/schema"
-	"github.com/ulpf/ulpf/internal/validate"
+	"github.com/logkrama/logkrama/internal/schema"
+	"github.com/logkrama/logkrama/internal/validate"
 )
 
 func sampleValidEvent() *schema.Event {

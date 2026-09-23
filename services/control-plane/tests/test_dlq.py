@@ -23,6 +23,11 @@ def test_ingest_list_and_replay(client, admin_headers):
     ).json()
     assert len(filtered) == 1
 
+    limited = client.get("/v1/dlq?limit=1", headers=admin_headers)
+    assert limited.status_code == 200
+    assert len(limited.json()) == 1
+    assert client.get("/v1/dlq?limit=0", headers=admin_headers).status_code == 422
+
     replay = client.post(
         "/v1/dlq/replay",
         json={"event_ids": ["evt-bad-1", "does-not-exist"]},

@@ -50,7 +50,7 @@ func sampleEvent() *Event {
 			SegmentID:    "seg-0001",
 			Offset:       128,
 			Length:       256,
-			RetrievalURI: "s3a://ulpf-raw/segments/dt=2026-09-07/seg-0001.zst",
+			RetrievalURI: "s3a://logkrama-raw/segments/dt=2026-09-07/seg-0001.zst",
 		},
 		Lineage: Lineage{
 			ParserID: "paloalto.panos.traffic", ParserVersion: "1.0.0",
