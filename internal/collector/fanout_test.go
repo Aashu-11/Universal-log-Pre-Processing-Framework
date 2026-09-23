@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ulpf/ulpf/internal/collector"
-	"github.com/ulpf/ulpf/internal/vault"
+	"github.com/logkrama/logkrama/internal/collector"
+	"github.com/logkrama/logkrama/internal/vault"
 )
 
 type spyPublisher struct {

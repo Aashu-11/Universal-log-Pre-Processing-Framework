@@ -8,7 +8,7 @@ import (
 
 	"github.com/santhosh-tekuri/jsonschema/v5"
 
-	uesschema "github.com/ulpf/ulpf/schema"
+	uesschema "github.com/logkrama/logkrama/schema"
 )
 
 var (

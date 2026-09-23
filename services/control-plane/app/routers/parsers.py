@@ -2,14 +2,14 @@
 versions, rollback, and a standalone test endpoint for the console's Parser
 Workbench (Phase 9).
 
-Publishing writes the artifact into ulpf_meta (parser_registry +
+Publishing writes the artifact into logkrama_meta (parser_registry +
 parser_artifacts) AND into the real packs/ directory on disk, so the
 already-built, already-tested fsnotify hot-reload path
 (internal/parse.Registry.WatchDir, Phase 3) is what actually propagates the
 change to a co-located processor — see docs/DECISIONS.md for why this is
 simpler than a second, Kafka-fetch-based distribution mechanism for a
 single-node prototype. A notification is still published to
-ulpf.control.parsers for audit/observability and as the extension point a
+logkrama.control.parsers for audit/observability and as the extension point a
 multi-node deployment would build a Kafka-fetch consumer against.
 """
 
@@ -31,7 +31,7 @@ from app.db import get_db
 from app.models import ParserArtifact, ParserRegistry, ProcessorNode
 from app.schemas import ORMModel
 from app.security import CurrentUser, require_role
-from app.ulpfctl import UlpfctlError, lint, test_fixtures
+from app.logkramactl import LogKramactlError, lint, test_fixtures
 
 router = APIRouter(prefix="/v1/parsers", tags=["parsers"])
 
@@ -96,16 +96,16 @@ def publish_parser(
 
         try:
             lint_ok, lint_output = lint(str(tmp_path), settings.repo_root)
-        except UlpfctlError as e:
+        except LogKramactlError as e:
             raise HTTPException(
-                status.HTTP_502_BAD_GATEWAY, f"ulpfctl unavailable: {e}"
+                status.HTTP_502_BAD_GATEWAY, f"logkramactl unavailable: {e}"
             ) from e
         if not lint_ok:
             raise HTTPException(
                 status.HTTP_422_UNPROCESSABLE_ENTITY, f"lint failed:\n{lint_output}"
             )
 
-        # Stage into the real packs/ directory so `ulpfctl parser test` (which
+        # Stage into the real packs/ directory so `logkramactl parser test` (which
         # loads the whole packs/ tree) sees this candidate version, then run
         # fixtures against it before committing to anything durable.
         dest_dir = Path(settings.packs_dir) / parser_id.replace(".", "/")
@@ -117,9 +117,9 @@ def publish_parser(
 
         try:
             fixtures_ok, fixture_output = test_fixtures(parser_id, settings.repo_root)
-        except UlpfctlError as e:
+        except LogKramactlError as e:
             raise HTTPException(
-                status.HTTP_502_BAD_GATEWAY, f"ulpfctl unavailable: {e}"
+                status.HTTP_502_BAD_GATEWAY, f"logkramactl unavailable: {e}"
             ) from e
         if not fixtures_ok:
             raise HTTPException(

@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ulpf/ulpf/internal/schema"
-	"github.com/ulpf/ulpf/internal/sink"
-	"github.com/ulpf/ulpf/internal/telemetry"
-	"github.com/ulpf/ulpf/internal/validate"
+	"github.com/logkrama/logkrama/internal/schema"
+	"github.com/logkrama/logkrama/internal/sink"
+	"github.com/logkrama/logkrama/internal/telemetry"
+	"github.com/logkrama/logkrama/internal/validate"
 )
 
 // Router fans one validated event out to every configured sink. Every
@@ -19,7 +19,7 @@ import (
 // queryable (that's exactly what Q5's missing_raw_ref check in
 // docs/QUERIES.md proves). DLQ is additive: a validation failure also
 // gets a copy on the DLQ topic, tagged with why, for the console's DLQ
-// page and `ulpfctl dlq replay`.
+// page and `logkramactl dlq replay`.
 type Router struct {
 	Lake    sink.Sink
 	Stream  sink.Sink

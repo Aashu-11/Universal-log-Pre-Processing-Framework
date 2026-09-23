@@ -3,7 +3,7 @@ package enrich
 import (
 	"net"
 
-	"github.com/ulpf/ulpf/internal/schema"
+	"github.com/logkrama/logkrama/internal/schema"
 )
 
 // CIDRClassify sets enrich.src_is_internal/dst_is_internal by checking each

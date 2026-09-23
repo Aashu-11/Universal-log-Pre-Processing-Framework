@@ -3,7 +3,7 @@ package normalize
 import (
 	"fmt"
 
-	"github.com/ulpf/ulpf/internal/schema"
+	"github.com/logkrama/logkrama/internal/schema"
 )
 
 // setUESField writes val onto the UES field named by its dotted path.

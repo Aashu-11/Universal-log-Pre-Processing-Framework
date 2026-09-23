@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ulpf/ulpf/internal/vault/store"
+	"github.com/logkrama/logkrama/internal/vault/store"
 )
 
 // LedgerEntry is one line of ledger/dt=YYYY-MM-DD/ledger.jsonl — one entry

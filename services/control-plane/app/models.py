@@ -1,4 +1,4 @@
-"""SQLAlchemy ORM models for ulpf_meta — kept flat and query-friendly per
+"""SQLAlchemy ORM models for logkrama_meta — kept flat and query-friendly per
 CLAUDE.md's Phase 7 note, since Presto's `meta` catalog (postgresql
 connector) reads these tables directly, no view layer in between.
 """

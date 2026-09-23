@@ -1,7 +1,7 @@
 {
   "tableName": "events_normalized",
-  "schemaName": "ulpf",
-  "topicName": "ulpf.events.normalized",
+  "schemaName": "logkrama",
+  "topicName": "logkrama.events.normalized",
   "key": {
     "dataFormat": "raw",
     "fields": [

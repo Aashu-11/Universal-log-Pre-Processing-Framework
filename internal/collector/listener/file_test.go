@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ulpf/ulpf/internal/collector/batch"
+	"github.com/logkrama/logkrama/internal/collector/batch"
 )
 
 func drainN(t *testing.T, buf *batch.Buffer, n int) []string {

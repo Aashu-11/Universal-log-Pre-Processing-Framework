@@ -9,9 +9,9 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/ulpf/ulpf/internal/telemetry"
-	"github.com/ulpf/ulpf/internal/vault"
-	"github.com/ulpf/ulpf/internal/vault/store"
+	"github.com/logkrama/logkrama/internal/telemetry"
+	"github.com/logkrama/logkrama/internal/vault"
+	"github.com/logkrama/logkrama/internal/vault/store"
 )
 
 type fakeBuffer struct {

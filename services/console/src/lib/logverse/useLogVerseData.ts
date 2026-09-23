@@ -21,7 +21,7 @@ export interface LogVerseData {
   dlqEvents: LogVerseEvent[];
   vaultChain: VaultBlock[];
   eps: DerivedEps | null;
-  /** Real ulpf_udp_drops_total from the collector's own Prometheus
+  /** Real logkrama_udp_drops_total from the collector's own Prometheus
    * counter — actual packets dropped at ingest, not a rendering limit. */
   droppedEventsTotal: number | null;
   status: ConnectionStatus;

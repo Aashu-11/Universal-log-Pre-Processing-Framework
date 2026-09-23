@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ulpf/ulpf/internal/loggen"
+	"github.com/logkrama/logkrama/internal/loggen"
 )
 
 // newGenCmd prints synthetic sample lines for a vendor not shipped as a

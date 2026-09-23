@@ -9,12 +9,12 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ulpf/ulpf/internal/parse"
-	"github.com/ulpf/ulpf/internal/parse/ops"
+	"github.com/logkrama/logkrama/internal/parse"
+	"github.com/logkrama/logkrama/internal/parse/ops"
 )
 
-// newParserCmd registers `ulpfctl parser test` (golden fixture regression)
-// and `ulpfctl parser lint` (DSL validation + unsafe-regex rejection).
+// newParserCmd registers `logkramactl parser test` (golden fixture regression)
+// and `logkramactl parser lint` (DSL validation + unsafe-regex rejection).
 func newParserCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "parser",

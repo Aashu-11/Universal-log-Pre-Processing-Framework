@@ -70,7 +70,7 @@ export async function fetchRecentEvents(limit: number): Promise<RecentEvent[]> {
   const resp = await controlPlane.post<QueryResponse>("/v1/query", {
     sql: recentEventsSql(limit),
     catalog: "lake",
-    schema_: "ulpf",
+    schema_: "logkrama",
   });
   return resp.rows.map(rowToRecentEvent);
 }
@@ -96,11 +96,11 @@ export async function fetchFullRecord(eventId: string): Promise<FullRecord> {
   const resp = await controlPlane.post<QueryResponse>("/v1/query", {
     sql: `SELECT * FROM events WHERE event_id = '${safeId}' LIMIT 1`,
     catalog: "lake",
-    schema_: "ulpf",
+    schema_: "logkrama",
   });
   const row = resp.rows[0];
   if (resp.row_count === 0 || !row) {
-    throw new Error(`event ${eventId} not found in lake.ulpf.events`);
+    throw new Error(`event ${eventId} not found in lake.logkrama.events`);
   }
   return { columns: resp.columns, values: row };
 }

@@ -3,7 +3,7 @@
 ## What it does
 
 The default **Nexus graph** uses the same `react-force-graph-3d` renderer as
-the supplied LedgerSpy visualization, adapted to ULPF data and the console's
+the supplied LedgerSpy visualization, adapted to LOGKRAMA data and the console's
 dark violet theme. It retains the force-driven motion, moving link particles,
 hover neighbor highlighting and three-second camera flight on click. The
 camera starts centered on the graph and fits the node cloud after its initial
@@ -28,7 +28,7 @@ average, a count of other events sharing observed IPs, and the existing
 raw-evidence forensic trace. These are descriptive summaries of loaded rows;
 they do not claim an attack or invent enrichment fields.
 
-LogVerse renders the live ULPF pipeline as a navigable 3D scene: real
+LogVerse renders the live LOGKRAMA pipeline as a navigable 3D scene: real
 registered sources around the outside, the eight CLAUDE.md pipeline stages
 laid out as labeled stations, real events as particles flying between them,
 the Raw Vault's Merkle chain as a row of linked blocks, and the four Presto
@@ -62,9 +62,9 @@ console page already calls:
 | Data | Endpoint | Notes |
 |---|---|---|
 | Sources | `GET /v1/sources` | same rows Sources page lists |
-| Recent normalized events | `POST /v1/query` against `lake.ulpf.events` | superset of Live Theater/Traceability's column list — adds `src_ip/port`, `dst_ip/port`, `enrich_dst_is_internal`, `enrich_ioc_*`, `threat_*` |
+| Recent normalized events | `POST /v1/query` against `lake.logkrama.events` | superset of Live Theater/Traceability's column list — adds `src_ip/port`, `dst_ip/port`, `enrich_dst_is_internal`, `enrich_ioc_*`, `threat_*` |
 | DLQ events | `GET /v1/dlq?limit=80` | newest bounded rows; `raw_ref` (segment_id/offset/length/sha256) makes a DLQ event traceable |
-| Vault chain | `POST /v1/query` against `vault.ulpf.raw_segments` | one row per sealed segment — this *is* the Merkle chain |
+| Vault chain | `POST /v1/query` against `vault.logkrama.raw_segments` | one row per sealed segment — this *is* the Merkle chain |
 | Forensic trace | `GET /v1/events/{id}/trace` | same endpoint Traceability's "Verify now" uses — raw bytes + SHA-256 + Merkle proof |
 | Pipeline stats | `GET /v1/stats/pipeline` | source of the derived EPS figure and the real dropped-packet count |
 | Vault integrity | `GET /v1/integrity/verify` | manual "Verify vault chain" button only — this is a full chain recompute, expensive, never auto-polled |
@@ -155,7 +155,7 @@ DLQ total in Postgres) are still shown as numbers from `/v1/stats/pipeline`
 
 Found live while testing this feature against this project's own dev lake:
 an unfiltered `ORDER BY event_ingested_at DESC LIMIT n` against
-`lake.ulpf.events` took **15s+ for a plain `count(*)`**, with only 29
+`lake.logkrama.events` took **15s+ for a plain `count(*)`**, with only 29
 partitions registered — not a partition explosion, just a slow response
 from this lightly-resourced dev environment's Presto/MinIO. At LogVerse's
 3s event-poll interval, that meant a new expensive query could fire before
@@ -164,8 +164,8 @@ starved each other and left the page stuck on "Connecting…" indefinitely —
 looking exactly like the backend was down when it wasn't. Two fixes, both
 in `src/lib/logverse/data.ts` and `useLogVerseData.ts`:
 
-1. Every query against a `dt`-partitioned table (`lake.ulpf.events`,
-   `vault.ulpf.raw_segments`) now filters to `dt >= current_date - 14 days`,
+1. Every query against a `dt`-partitioned table (`lake.logkrama.events`,
+   `vault.logkrama.raw_segments`) now filters to `dt >= current_date - 14 days`,
    so Hive-side partition pruning has something to prune regardless of how
    much older history has accumulated from past test runs.
 2. Each poller (events/slow/eps) now skips a tick if its previous request
@@ -220,7 +220,7 @@ and eventually-responsive regardless of how that gets resolved.
 ## Known limitations / follow-ups
 
 - The `stream` Presto catalog issue documented elsewhere in this repo
-  (intermittent `Schema 'ulpf' does not exist` after container-restart
+  (intermittent `Schema 'logkrama' does not exist` after container-restart
   churn) doesn't affect LogVerse directly — it doesn't query `stream`, but
   it's worth knowing the "live stream" destination node is a static label,
   not a live row count.

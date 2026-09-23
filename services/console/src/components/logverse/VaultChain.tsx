@@ -34,7 +34,7 @@ function FractureOverlay({ scale }: { scale: number }) {
 }
 
 /** The Raw Vault's Merkle chain — one block per sealed vault segment
- * (vault.ulpf.raw_segments), linked prev_root -> merkle_root exactly as
+ * (vault.logkrama.raw_segments), linked prev_root -> merkle_root exactly as
  * the real chain is, laid out beneath PRESERVE. integrityState is only
  * ever "verified"/"failed" after the caller has actually run
  * GET /v1/integrity/verify — this component never assumes verification

@@ -97,24 +97,24 @@ export function LogVersePage() {
   const showEmptyState = data.status === "live" && !hasEvents;
 
   return (
-    <div className="flex h-screen min-h-[560px] flex-col gap-3 bg-[var(--color-bg)] p-4">
-      <div className="flex min-h-[68px] items-center justify-between rounded-2xl border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-5 shadow-[0_12px_36px_rgba(0,0,0,0.35)]">
+    <div className="flex h-screen min-h-[560px] flex-col gap-5 bg-[var(--color-bg)] p-5 md:p-7">
+      <div className="neo-card flex min-h-[82px] items-center justify-between rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] px-6 md:px-8">
         <div>
           <h1 className="text-[22px] font-semibold tracking-tight text-[var(--color-text)]">◈ LogVerse <span className="font-normal text-[var(--color-accent-hover)]">Nexus</span></h1>
-          <p className="text-[11px] text-[var(--color-text-muted)]">
+          <p className="mt-1 text-[13px] text-[var(--color-text-muted)]">
             3D forensic intelligence · real log events · traceable evidence
           </p>
         </div>
         <div className="flex items-center gap-2">
-        <div className="flex rounded-lg border border-[var(--color-border-strong)] p-0.5" aria-label="Visualization mode">
-          <button type="button" onClick={() => setSceneMode("nexus")} aria-pressed={sceneMode === "nexus"} className={`rounded-md px-3 py-1.5 text-[11px] ${sceneMode === "nexus" ? "bg-[var(--color-accent)] text-white" : "text-[var(--color-text-secondary)]"}`}>Nexus graph</button>
-          <button type="button" onClick={() => setSceneMode("pipeline")} aria-pressed={sceneMode === "pipeline"} className={`rounded-md px-3 py-1.5 text-[11px] ${sceneMode === "pipeline" ? "bg-[var(--color-accent)] text-white" : "text-[var(--color-text-secondary)]"}`}>Pipeline</button>
+        <div className="neo-inset flex rounded-xl border border-[var(--color-border)] p-1" aria-label="Visualization mode">
+          <button type="button" onClick={() => setSceneMode("nexus")} aria-pressed={sceneMode === "nexus"} className={`rounded-lg px-4 py-2 text-[12px] font-medium ${sceneMode === "nexus" ? "neo-button bg-[var(--color-accent)] text-white" : "text-[var(--color-text-secondary)]"}`}>Nexus graph</button>
+          <button type="button" onClick={() => setSceneMode("pipeline")} aria-pressed={sceneMode === "pipeline"} className={`rounded-lg px-4 py-2 text-[12px] font-medium ${sceneMode === "pipeline" ? "neo-button bg-[var(--color-accent)] text-white" : "text-[var(--color-text-secondary)]"}`}>Pipeline</button>
         </div>
         <button
           type="button"
           onClick={runIntegrityVerify}
           disabled={integrityChecking}
-          className="rounded-lg border border-[var(--color-border-strong)] px-3 py-1.5 text-[11px] text-[var(--color-text-secondary)] hover:border-white/30 hover:bg-white/[0.06] disabled:opacity-50"
+          className="neo-button rounded-xl border border-[var(--color-border)] bg-white/[0.025] px-4 py-2 text-[12px] font-medium text-[var(--color-text-secondary)] hover:border-white/30 hover:bg-white/[0.06] disabled:opacity-50"
         >
           {integrityChecking ? "Verifying vault chain…" : "Verify vault chain"}
         </button>
@@ -146,7 +146,7 @@ export function LogVersePage() {
       )}
 
       {!showEmptyState && hasEvents && (
-        <div className="relative min-h-0 flex-1 overflow-hidden rounded-xl border border-[var(--color-border)] bg-black">
+        <div className="neo-card relative min-h-0 flex-1 overflow-hidden rounded-3xl border border-[var(--color-border)] bg-black">
           {webglOk && !canvasLost && sceneMode === "nexus" && (
             <NexusGraph ref={nexusRef} events={visible} selectedId={selectedId} onSelect={onSelect} onNodeSelect={onGraphNodeSelect} reducedMotion={perf.reducedMotion} paused={perf.tabHidden} />
           )}

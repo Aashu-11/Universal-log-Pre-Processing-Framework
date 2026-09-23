@@ -8,10 +8,10 @@ import (
 
 	pq "github.com/parquet-go/parquet-go"
 
-	"github.com/ulpf/ulpf/internal/collector"
-	"github.com/ulpf/ulpf/internal/sink/vaultindex"
-	"github.com/ulpf/ulpf/internal/vault"
-	"github.com/ulpf/ulpf/internal/vault/store"
+	"github.com/logkrama/logkrama/internal/collector"
+	"github.com/logkrama/logkrama/internal/sink/vaultindex"
+	"github.com/logkrama/logkrama/internal/vault"
+	"github.com/logkrama/logkrama/internal/vault/store"
 )
 
 func TestIndexSinkPublishAndFlush(t *testing.T) {

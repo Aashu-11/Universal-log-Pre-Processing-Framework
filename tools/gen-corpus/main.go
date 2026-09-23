@@ -15,9 +15,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/ulpf/ulpf/internal/loggen"
-	"github.com/ulpf/ulpf/internal/parse"
-	"github.com/ulpf/ulpf/internal/parse/ops"
+	"github.com/logkrama/logkrama/internal/loggen"
+	"github.com/logkrama/logkrama/internal/parse"
+	"github.com/logkrama/logkrama/internal/parse/ops"
 )
 
 const linesPerVendor = 25

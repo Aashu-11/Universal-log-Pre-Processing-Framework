@@ -15,16 +15,16 @@ import pytest
 from app.config import settings
 
 REPO_ROOT = Path(settings.repo_root)
-ULPFCTL = REPO_ROOT / "bin" / ("ulpfctl.exe" if os.name == "nt" else "ulpfctl")
+LOGKRAMACTL = REPO_ROOT / "bin" / ("logkramactl.exe" if os.name == "nt" else "logkramactl")
 
 pytestmark = pytest.mark.skipif(
-    not ULPFCTL.exists(), reason="bin/ulpfctl not built — run go build first"
+    not LOGKRAMACTL.exists(), reason="bin/logkramactl not built — run go build first"
 )
 
 
 def _generate_sonicwall_sample(count: int = 200) -> list[str]:
     result = subprocess.run(
-        [str(ULPFCTL), "gen", "sonicwall", "--count", str(count)],
+        [str(LOGKRAMACTL), "gen", "sonicwall", "--count", str(count)],
         capture_output=True,
         text=True,
         cwd=str(REPO_ROOT),

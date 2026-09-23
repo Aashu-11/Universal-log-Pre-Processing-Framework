@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ulpf/ulpf/internal/loggen"
-	"github.com/ulpf/ulpf/internal/normalize"
-	"github.com/ulpf/ulpf/internal/parse"
-	"github.com/ulpf/ulpf/internal/parse/fields"
-	"github.com/ulpf/ulpf/internal/parse/ops"
-	"github.com/ulpf/ulpf/internal/schema"
+	"github.com/logkrama/logkrama/internal/loggen"
+	"github.com/logkrama/logkrama/internal/normalize"
+	"github.com/logkrama/logkrama/internal/parse"
+	"github.com/logkrama/logkrama/internal/parse/fields"
+	"github.com/logkrama/logkrama/internal/parse/ops"
+	"github.com/logkrama/logkrama/internal/schema"
 )
 
 func repoRoot(t *testing.T) string {

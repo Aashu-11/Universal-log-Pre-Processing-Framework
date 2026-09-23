@@ -74,7 +74,7 @@ export function ReviewerMode() {
   const runQueryProof = async (id: string, sql: string) => {
     setRow(id, "running");
     try {
-      const resp = await controlPlane.post<QueryResponse>("/v1/query", { sql, catalog: "lake", schema_: "ulpf" });
+      const resp = await controlPlane.post<QueryResponse>("/v1/query", { sql, catalog: "lake", schema_: "logkrama" });
       setRow(id, "pass", `${resp.row_count} rows returned`, JSON.stringify(resp, null, 2));
     } catch (err) {
       setRow(id, "fail", "query failed", describeError(err));
@@ -135,14 +135,14 @@ export function ReviewerMode() {
     {
       key: "b",
       title: "(b) Parse source attributes",
-      description: "Runs every shipped vendor's golden fixtures for real via `ulpfctl parser test --all`.",
+      description: "Runs every shipped vendor's golden fixtures for real via `logkramactl parser test --all`.",
       action: () => runControlPlaneProof("b", "/v1/reviewer/parser-fixtures"),
     },
     {
       key: "c",
       title: "(c) Common taxonomy",
       description: "Runs Q1 (cross-vendor unified visibility) live against Presto.",
-      action: () => runQueryProof("c", "SELECT observer_vendor, event_action, count(*) AS events FROM lake.ulpf.events WHERE dt = CAST(current_date AS varchar) GROUP BY 1,2 ORDER BY events DESC"),
+      action: () => runQueryProof("c", "SELECT observer_vendor, event_action, count(*) AS events FROM lake.logkrama.events WHERE dt = CAST(current_date AS varchar) GROUP BY 1,2 ORDER BY events DESC"),
     },
     {
       key: "d",
@@ -164,7 +164,7 @@ export function ReviewerMode() {
       action: () =>
         runQueryProof(
           "f",
-          "SELECT 'live' AS tier, src_ip, count(*) FROM stream.ulpf.events_normalized GROUP BY 1,2 UNION ALL SELECT 'historical', src_ip, count(*) FROM lake.ulpf.events WHERE dt = CAST(current_date AS varchar) GROUP BY 1,2",
+          "SELECT 'live' AS tier, src_ip, count(*) FROM stream.logkrama.events_normalized GROUP BY 1,2 UNION ALL SELECT 'historical', src_ip, count(*) FROM lake.logkrama.events WHERE dt = CAST(current_date AS varchar) GROUP BY 1,2",
         ),
     },
     {
@@ -180,7 +180,7 @@ export function ReviewerMode() {
       action: () =>
         runQueryProof(
           "h",
-          "SELECT src_ip, count(DISTINCT dst_ip) AS distinct_dsts, count(DISTINCT dst_port) AS distinct_ports FROM lake.ulpf.events WHERE dt = CAST(current_date AS varchar) GROUP BY 1",
+          "SELECT src_ip, count(DISTINCT dst_ip) AS distinct_dsts, count(DISTINCT dst_port) AS distinct_ports FROM lake.logkrama.events WHERE dt = CAST(current_date AS varchar) GROUP BY 1",
         ),
     },
     {

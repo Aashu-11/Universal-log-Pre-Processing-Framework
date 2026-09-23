@@ -1,4 +1,4 @@
--- ULPF Presto DDL. Run against the `lake` and `vault` catalogs (both are
+-- LOGKRAMA Presto DDL. Run against the `lake` and `vault` catalogs (both are
 -- the hive-hadoop2 connector against the same Hive Metastore, S3A -> MinIO
 -- — see deploy/presto/etc/catalog/{lake,vault}.properties).
 --
@@ -6,18 +6,18 @@
 -- tags exactly (internal/schema/flatrow.go) — Presto's Hive connector maps
 -- Parquet files to these declared columns by name.
 
-CREATE SCHEMA IF NOT EXISTS lake.ulpf
-WITH (location = 's3a://ulpf-lake/');
+CREATE SCHEMA IF NOT EXISTS lake.logkrama
+WITH (location = 's3a://logkrama-lake/');
 
-CREATE SCHEMA IF NOT EXISTS vault.ulpf
-WITH (location = 's3a://ulpf-raw/index/');
+CREATE SCHEMA IF NOT EXISTS vault.logkrama
+WITH (location = 's3a://logkrama-raw/index/');
 
 -- ---------------------------------------------------------------------------
--- lake.ulpf.events — normalized UES events, partitioned by dt/hour/vendor.
+-- lake.logkrama.events — normalized UES events, partitioned by dt/hour/vendor.
 -- Written by internal/sink/parquet.Writer to
--- s3a://ulpf-lake/normalized/dt=YYYY-MM-DD/hour=HH/vendor=<v>/*.parquet
+-- s3a://logkrama-lake/normalized/dt=YYYY-MM-DD/hour=HH/vendor=<v>/*.parquet
 -- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS lake.ulpf.events (
+CREATE TABLE IF NOT EXISTS lake.logkrama.events (
     event_id                    VARCHAR,
     event_kind                  VARCHAR,
     event_category               VARCHAR,
@@ -122,17 +122,17 @@ CREATE TABLE IF NOT EXISTS lake.ulpf.events (
     vendor                        VARCHAR
 )
 WITH (
-    external_location = 's3a://ulpf-lake/normalized/',
+    external_location = 's3a://logkrama-lake/normalized/',
     format = 'PARQUET',
     partitioned_by = ARRAY['dt', 'hour', 'vendor']
 );
 
 -- ---------------------------------------------------------------------------
--- vault.ulpf.raw_segments — one row per sealed Raw Vault segment, the
+-- vault.logkrama.raw_segments — one row per sealed Raw Vault segment, the
 -- Merkle chain. Written by internal/sink/vaultindex.ExportSegments to
--- s3a://ulpf-raw/index/segments/dt=YYYY-MM-DD/*.parquet
+-- s3a://logkrama-raw/index/segments/dt=YYYY-MM-DD/*.parquet
 -- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS vault.ulpf.raw_segments (
+CREATE TABLE IF NOT EXISTS vault.logkrama.raw_segments (
     segment_id     VARCHAR,
     merkle_root    VARCHAR,
     prev_root      VARCHAR,
@@ -142,17 +142,17 @@ CREATE TABLE IF NOT EXISTS vault.ulpf.raw_segments (
     dt             VARCHAR
 )
 WITH (
-    external_location = 's3a://ulpf-raw/index/segments/',
+    external_location = 's3a://logkrama-raw/index/segments/',
     format = 'PARQUET',
     partitioned_by = ARRAY['dt']
 );
 
 -- ---------------------------------------------------------------------------
--- vault.ulpf.raw_index — one row per event, pointing at its exact bytes
+-- vault.logkrama.raw_index — one row per event, pointing at its exact bytes
 -- inside a sealed segment. Written by internal/sink/vaultindex.IndexSink to
--- s3a://ulpf-raw/index/dt=YYYY-MM-DD/*.parquet
+-- s3a://logkrama-raw/index/dt=YYYY-MM-DD/*.parquet
 -- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS vault.ulpf.raw_index (
+CREATE TABLE IF NOT EXISTS vault.logkrama.raw_index (
     event_id     VARCHAR,
     segment_id   VARCHAR,
     "offset"     BIGINT,
@@ -161,13 +161,13 @@ CREATE TABLE IF NOT EXISTS vault.ulpf.raw_index (
     dt           VARCHAR
 )
 WITH (
-    external_location = 's3a://ulpf-raw/index/',
+    external_location = 's3a://logkrama-raw/index/',
     format = 'PARQUET',
     partitioned_by = ARRAY['dt']
 );
 
 -- After writing new partition directories, register them so Presto can see
--- them (cmd/ulpfctl partitions sync runs this on a schedule):
---   CALL system.sync_partition_metadata('ulpf', 'events', 'FULL');
---   CALL system.sync_partition_metadata('ulpf', 'raw_segments', 'FULL');
---   CALL system.sync_partition_metadata('ulpf', 'raw_index', 'FULL');
+-- them (cmd/logkramactl partitions sync runs this on a schedule):
+--   CALL system.sync_partition_metadata('logkrama', 'events', 'FULL');
+--   CALL system.sync_partition_metadata('logkrama', 'raw_segments', 'FULL');
+--   CALL system.sync_partition_metadata('logkrama', 'raw_index', 'FULL');

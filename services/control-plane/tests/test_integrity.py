@@ -1,7 +1,7 @@
-"""Integration tests that shell out to the real bin/ulpfctl.exe binary —
+"""Integration tests that shell out to the real bin/logkramactl.exe binary —
 the same one the API routes invoke — against a throwaway vault directory.
 Skipped automatically if the binary hasn't been built yet
-(`go build -o bin/ulpfctl.exe ./cmd/ulpfctl` from the repo root).
+(`go build -o bin/logkramactl.exe ./cmd/logkramactl` from the repo root).
 """
 
 import os
@@ -13,10 +13,10 @@ import pytest
 from app.config import settings
 
 REPO_ROOT = Path(settings.repo_root)
-ULPFCTL = REPO_ROOT / "bin" / ("ulpfctl.exe" if os.name == "nt" else "ulpfctl")
+LOGKRAMACTL = REPO_ROOT / "bin" / ("logkramactl.exe" if os.name == "nt" else "logkramactl")
 
 pytestmark = pytest.mark.skipif(
-    not ULPFCTL.exists(), reason="bin/ulpfctl not built — run go build first"
+    not LOGKRAMACTL.exists(), reason="bin/logkramactl not built — run go build first"
 )
 
 
@@ -24,14 +24,14 @@ pytestmark = pytest.mark.skipif(
 def vault_dir(tmp_path, monkeypatch):
     d = tmp_path / "vault"
     d.mkdir()
-    monkeypatch.setenv("ULPF_VAULT_LOCAL_DIR", str(d))
+    monkeypatch.setenv("LOGKRAMA_VAULT_LOCAL_DIR", str(d))
     return d
 
 
 def _write_events(vault_dir, lines: list[str]):
-    env = dict(os.environ, ULPF_VAULT_LOCAL_DIR=str(vault_dir))
+    env = dict(os.environ, LOGKRAMA_VAULT_LOCAL_DIR=str(vault_dir))
     result = subprocess.run(
-        [str(ULPFCTL), "vault", "write"],
+        [str(LOGKRAMACTL), "vault", "write"],
         input="\n".join(lines) + "\n",
         capture_output=True,
         text=True,

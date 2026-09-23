@@ -11,13 +11,13 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ulpf/ulpf/internal/sink/vaultindex"
-	"github.com/ulpf/ulpf/internal/vault"
-	"github.com/ulpf/ulpf/internal/vault/store"
+	"github.com/logkrama/logkrama/internal/sink/vaultindex"
+	"github.com/logkrama/logkrama/internal/vault"
+	"github.com/logkrama/logkrama/internal/vault/store"
 )
 
 func openVaultStore() (store.Store, error) {
-	dir := os.Getenv("ULPF_VAULT_LOCAL_DIR")
+	dir := os.Getenv("LOGKRAMA_VAULT_LOCAL_DIR")
 	if dir == "" {
 		dir = "./data/vault"
 	}
@@ -26,7 +26,7 @@ func openVaultStore() (store.Store, error) {
 			endpoint,
 			os.Getenv("MINIO_ACCESS_KEY"),
 			os.Getenv("MINIO_SECRET_KEY"),
-			envOr("MINIO_RAW_BUCKET", "ulpf-raw"),
+			envOr("MINIO_RAW_BUCKET", "logkrama-raw"),
 			os.Getenv("MINIO_USE_SSL") == "true",
 		)
 	}
@@ -57,11 +57,11 @@ func newVaultExportIndexCmd() *cobra.Command {
 	var from, to string
 	c := &cobra.Command{
 		Use:   "export-index",
-		Short: "Export the segment ledger for --from..--to as Parquet, populating vault.ulpf.raw_segments",
+		Short: "Export the segment ledger for --from..--to as Parquet, populating vault.logkrama.raw_segments",
 		Long: "Reads each day's ledger.jsonl (already written by every Vault.Seal call) and rolls it into\n" +
-			"s3a://ulpf-raw/index/segments/dt=.../segments.parquet — the source vault.ulpf.raw_segments reads\n" +
+			"s3a://logkrama-raw/index/segments/dt=.../segments.parquet — the source vault.logkrama.raw_segments reads\n" +
 			"from. Run this after new segments seal (cron, or after a demo load run) and follow with\n" +
-			"`ulpfctl partitions sync` so Presto discovers the new dt= partition.",
+			"`logkramactl partitions sync` so Presto discovers the new dt= partition.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			st, err := openVaultStore()
 			if err != nil {
@@ -133,7 +133,7 @@ func newVaultWriteCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			v := vault.New(st, vault.Config{NodeID: envOr("ULPF_NODE_ID", "ulpfctl")})
+			v := vault.New(st, vault.Config{NodeID: envOr("LOGKRAMA_NODE_ID", "logkramactl")})
 			if err := v.Bootstrap(context.Background()); err != nil {
 				return fmt.Errorf("bootstrap vault chain: %w", err)
 			}

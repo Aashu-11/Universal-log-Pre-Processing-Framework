@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ulpf/ulpf/internal/parse/fields"
-	"github.com/ulpf/ulpf/internal/schema"
+	"github.com/logkrama/logkrama/internal/parse/fields"
+	"github.com/logkrama/logkrama/internal/schema"
 )
 
 // Report summarizes one Apply call, feeding internal/validate's quality

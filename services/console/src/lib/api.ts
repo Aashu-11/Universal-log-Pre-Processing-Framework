@@ -11,16 +11,16 @@ export class ApiError extends Error {
   }
 }
 
-let authToken: string | null = localStorage.getItem("ulpf_token");
+let authToken: string | null = localStorage.getItem("logkrama_token");
 
-export const AUTH_EXPIRED_EVENT = "ulpf:auth-expired";
+export const AUTH_EXPIRED_EVENT = "logkrama:auth-expired";
 
 export function setAuthToken(token: string | null): void {
   authToken = token;
   if (token) {
-    localStorage.setItem("ulpf_token", token);
+    localStorage.setItem("logkrama_token", token);
   } else {
-    localStorage.removeItem("ulpf_token");
+    localStorage.removeItem("logkrama_token");
   }
 }
 

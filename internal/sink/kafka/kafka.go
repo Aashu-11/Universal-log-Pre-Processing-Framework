@@ -1,5 +1,5 @@
 // Package kafka publishes normalized events as JSON to the
-// ulpf.events.normalized topic with at-least-once, idempotent delivery.
+// logkrama.events.normalized topic with at-least-once, idempotent delivery.
 package kafka
 
 import (
@@ -10,7 +10,7 @@ import (
 
 	kg "github.com/segmentio/kafka-go"
 
-	"github.com/ulpf/ulpf/internal/schema"
+	"github.com/logkrama/logkrama/internal/schema"
 )
 
 // producer is the minimal surface Sink needs from a Kafka writer — kept as
@@ -42,7 +42,7 @@ func New(brokers []string, topic string) *Sink {
 		// kafka-go's own default BatchTimeout is 1s, meant for callers
 		// trickling in single messages who want the writer to accumulate
 		// its own batch before flushing. Write() is called once per event
-		// from a serial per-event consume loop (cmd/ulpf-processor), so
+		// from a serial per-event consume loop (cmd/logkrama-processor), so
 		// without this every single WriteMessages call would sit idle for
 		// up to a full second waiting on a batch that never grows — the
 		// same latency bug fixed in internal/collector/kafkapublisher.go.

@@ -10,8 +10,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/ulpf/ulpf/internal/parse/dsl"
-	"github.com/ulpf/ulpf/internal/parse/ops"
+	"github.com/logkrama/logkrama/internal/parse/dsl"
+	"github.com/logkrama/logkrama/internal/parse/ops"
 )
 
 // Registry holds every loaded parser's current Plan behind an atomic

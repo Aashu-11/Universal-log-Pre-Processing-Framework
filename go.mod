@@ -1,4 +1,4 @@
-module github.com/ulpf/ulpf
+module github.com/logkrama/logkrama
 
 go 1.27.0
 

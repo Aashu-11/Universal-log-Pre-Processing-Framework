@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ulpf/ulpf/internal/loggen"
-	"github.com/ulpf/ulpf/internal/normalize"
-	"github.com/ulpf/ulpf/internal/normalize/shape"
-	"github.com/ulpf/ulpf/internal/parse"
-	"github.com/ulpf/ulpf/internal/parse/ops"
-	"github.com/ulpf/ulpf/internal/schema"
+	"github.com/logkrama/logkrama/internal/loggen"
+	"github.com/logkrama/logkrama/internal/normalize"
+	"github.com/logkrama/logkrama/internal/normalize/shape"
+	"github.com/logkrama/logkrama/internal/parse"
+	"github.com/logkrama/logkrama/internal/parse/ops"
+	"github.com/logkrama/logkrama/internal/schema"
 )
 
 // TestSameEventFourShapes runs one real PAN-OS event through the actual

@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import onboarding
 
 app = FastAPI(
-    title="ULPF Onboarding Engine",
+    title="LOGKRAMA Onboarding Engine",
     description="Drain3 template mining, field type/name inference, and draft parser generation for unknown log sources.",
     version="1.0.0",
 )

@@ -167,7 +167,7 @@ export function TimelineControls({
           {eps ? `${eps.eps.toFixed(1)} eps (derived, ${eps.overSeconds.toFixed(0)}s)` : "eps —"}
         </span>
         <span>{visibleCount} visible{overflowCount > 0 ? ` (+${overflowCount} aggregated, not individually rendered)` : ""}</span>
-        <span title="Real ulpf_udp_drops_total from the collector — actual ingest-side packet drops, not a rendering limit">
+        <span title="Real logkrama_udp_drops_total from the collector — actual ingest-side packet drops, not a rendering limit">
           {droppedEventsTotal !== null ? droppedEventsTotal.toLocaleString() : "—"} dropped
         </span>
         <span className="text-[var(--color-warning)]">{dlqCount} DLQ</span>

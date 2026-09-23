@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ulpf/ulpf/internal/parse"
+	"github.com/logkrama/logkrama/internal/parse"
 )
 
 // UnknownSourceTag is set on lineage.parser_id when no tier resolves a

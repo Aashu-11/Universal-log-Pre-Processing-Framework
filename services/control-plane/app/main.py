@@ -30,7 +30,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="ULPF Control Plane",
+    title="LOGKRAMA Control Plane",
     description="Parser registry, source inventory, integrity/traceability API, and the read-only Presto query proxy.",
     version="1.0.0",
     lifespan=lifespan,

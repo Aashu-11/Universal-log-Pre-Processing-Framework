@@ -3,7 +3,7 @@ package enrich
 import (
 	"fmt"
 
-	"github.com/ulpf/ulpf/internal/schema"
+	"github.com/logkrama/logkrama/internal/schema"
 )
 
 type identityRecord struct {

@@ -7,7 +7,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/ulpf/ulpf/internal/schema"
+	"github.com/logkrama/logkrama/internal/schema"
 )
 
 // DLQ reason codes. A failed event still carries these plus its raw_ref —
@@ -27,7 +27,7 @@ type Result struct {
 }
 
 // Violation is one specific rule failure, with a reason code suitable for
-// grouping in the DLQ (`ulpfctl dlq` / the console's DLQ page group by
+// grouping in the DLQ (`logkramactl dlq` / the console's DLQ page group by
 // exactly this field).
 type Violation struct {
 	Reason  string

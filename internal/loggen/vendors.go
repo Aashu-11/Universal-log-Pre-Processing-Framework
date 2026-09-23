@@ -123,7 +123,7 @@ func (g *Generator) Line(v Vendor, now time.Time) string {
 
 // SonicWallTraffic emits a SonicWall-style kv traffic log — deliberately
 // NOT one of the parsers this repo ships, so it's a genuinely unknown
-// source for Phase 8's onboarding-flow proof (`ulpfctl parser test` has
+// source for Phase 8's onboarding-flow proof (`logkramactl parser test` has
 // never seen this shape, no pack references it).
 func (g *Generator) SonicWallTraffic(now time.Time) string {
 	srcIP, dstIP, srcPort, dstPort := g.srcDstPort()

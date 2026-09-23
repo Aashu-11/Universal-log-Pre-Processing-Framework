@@ -10,9 +10,9 @@ import (
 
 	pq "github.com/parquet-go/parquet-go"
 
-	"github.com/ulpf/ulpf/internal/schema"
-	sinkparquet "github.com/ulpf/ulpf/internal/sink/parquet"
-	"github.com/ulpf/ulpf/internal/vault/store"
+	"github.com/logkrama/logkrama/internal/schema"
+	sinkparquet "github.com/logkrama/logkrama/internal/sink/parquet"
+	"github.com/logkrama/logkrama/internal/vault/store"
 )
 
 func newEvent(i int, vendor, dstIP string, observedAt time.Time) *schema.Event {

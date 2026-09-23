@@ -1,5 +1,5 @@
 // Package processor wires IDENTIFY -> PARSE -> NORMALIZE -> ENRICH ->
-// VALIDATE -> ROUTE into the single call cmd/ulpf-processor makes per raw
+// VALIDATE -> ROUTE into the single call cmd/logkrama-processor makes per raw
 // event reference. Kept as its own package (not folded into main.go) so
 // the full pipeline is unit-testable end-to-end without Kafka or a live
 // processor binary — see processor_test.go.
@@ -10,20 +10,20 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ulpf/ulpf/internal/enrich"
-	"github.com/ulpf/ulpf/internal/identify"
-	"github.com/ulpf/ulpf/internal/normalize"
-	"github.com/ulpf/ulpf/internal/route"
-	"github.com/ulpf/ulpf/internal/schema"
-	"github.com/ulpf/ulpf/internal/validate"
-	"github.com/ulpf/ulpf/internal/vault"
+	"github.com/logkrama/logkrama/internal/enrich"
+	"github.com/logkrama/logkrama/internal/identify"
+	"github.com/logkrama/logkrama/internal/normalize"
+	"github.com/logkrama/logkrama/internal/route"
+	"github.com/logkrama/logkrama/internal/schema"
+	"github.com/logkrama/logkrama/internal/validate"
+	"github.com/logkrama/logkrama/internal/vault"
 )
 
 // Envelope is the minimal per-event context the processor needs from the
 // collector — deliberately a local, narrow type (not collector.Envelope)
 // so this package never depends on internal/collector, which would create
 // collector -> vaultindex -> processor -> collector-shaped cycles once
-// wired into cmd/ulpf-processor.
+// wired into cmd/logkrama-processor.
 type Envelope struct {
 	ListenerID string
 	PeerIP     string
@@ -39,7 +39,7 @@ type Processor struct {
 	Enrich    *enrich.Pipeline
 	Router    *route.Router
 	NodeID    string
-	RawBucket string // e.g. "ulpf-raw"; used only to build raw.retrieval_uri
+	RawBucket string // e.g. "logkrama-raw"; used only to build raw.retrieval_uri
 }
 
 // Process runs the full pipeline on one already-read raw event. raw must be
@@ -49,7 +49,7 @@ func (p *Processor) Process(ctx context.Context, eventID string, raw []byte, ref
 	now := time.Now()
 	bucket := p.RawBucket
 	if bucket == "" {
-		bucket = "ulpf-raw"
+		bucket = "logkrama-raw"
 	}
 	rawField := schema.Raw{
 		SHA256: ref.SHA256, SegmentID: ref.SegmentID, Offset: ref.Offset, Length: ref.Length,

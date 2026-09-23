@@ -33,7 +33,7 @@ _TRAILING_SEMICOLON = re.compile(r"\s*;\s*$")
 class QueryRequest(BaseModel):
     sql: str
     catalog: str = "lake"
-    schema_: str = "ulpf"
+    schema_: str = "logkrama"
 
 
 class QueryResponse(BaseModel):

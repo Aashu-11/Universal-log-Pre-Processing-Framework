@@ -1,4 +1,4 @@
-"""Thin subprocess wrapper around the `ulpfctl` Go binary. Rather than
+"""Thin subprocess wrapper around the `logkramactl` Go binary. Rather than
 reimplementing DSL validation, unsafe-regex linting, and golden-fixture
 testing a second time in Python, the control plane's publish pipeline
 shells out to the exact same compiled engine the data plane runs — one
@@ -16,48 +16,48 @@ import subprocess
 from pathlib import Path
 
 
-class UlpfctlError(RuntimeError):
+class LogKramactlError(RuntimeError):
     def __init__(self, message: str, output: str):
         super().__init__(message)
         self.output = output
 
 
 def _binary_path() -> str:
-    env_path = os.environ.get("ULPFCTL_PATH")
+    env_path = os.environ.get("LOGKRAMACTL_PATH")
     if env_path:
         return env_path
     candidates = [
-        Path(__file__).resolve().parents[3] / "bin" / "ulpfctl.exe",
-        Path(__file__).resolve().parents[3] / "bin" / "ulpfctl",
+        Path(__file__).resolve().parents[3] / "bin" / "logkramactl.exe",
+        Path(__file__).resolve().parents[3] / "bin" / "logkramactl",
     ]
     for c in candidates:
         if c.exists():
             return str(c)
-    found = shutil.which("ulpfctl")
+    found = shutil.which("logkramactl")
     if found:
         return found
-    raise UlpfctlError(
-        "ulpfctl binary not found", "set ULPFCTL_PATH or build bin/ulpfctl(.exe)"
+    raise LogKramactlError(
+        "logkramactl binary not found", "set LOGKRAMACTL_PATH or build bin/logkramactl(.exe)"
     )
 
 
 def _vault_env(settings) -> dict[str, str]:
-    """Translates the control plane's ULPF_MINIO_* Settings into the plain
-    MINIO_* names cmd/ulpfctl's vault subcommands actually read (see
-    cmd/ulpfctl/vault_cmd.go's openVaultStore). subprocess.run inherits the
+    """Translates the control plane's LOGKRAMA_MINIO_* Settings into the plain
+    MINIO_* names cmd/logkramactl's vault subcommands actually read (see
+    cmd/logkramactl/vault_cmd.go's openVaultStore). subprocess.run inherits the
     parent's environment by default, and the two naming schemes don't line
-    up on their own — a control plane started with only ULPF_MINIO_* set
+    up on their own — a control plane started with only LOGKRAMA_MINIO_* set
     (correct for its own Settings) would otherwise silently make every
-    `ulpfctl vault ...` subprocess call fall back to a local ./data/vault
+    `logkramactl vault ...` subprocess call fall back to a local ./data/vault
     directory instead of the real MinIO-backed store, failing with a
     misleading "key not found" rather than a config error.
 
     Only returns MINIO_* overrides, and only when minio_endpoint is
-    actually configured — the local-dir fallback (ULPF_VAULT_LOCAL_DIR)
+    actually configured — the local-dir fallback (LOGKRAMA_VAULT_LOCAL_DIR)
     already has matching names on both the Python and Go sides, so it
     passes through correctly via ordinary environment inheritance without
     needing an override here. Deliberately not set unconditionally: tests
-    use monkeypatch.setenv("ULPF_VAULT_LOCAL_DIR", ...) at test-run time,
+    use monkeypatch.setenv("LOGKRAMA_VAULT_LOCAL_DIR", ...) at test-run time,
     which Settings (loaded once at import time) never observes — hardcoding
     settings.vault_local_dir here would silently override that back to the
     stale import-time default.
@@ -90,15 +90,15 @@ def _run(
             timeout=30,
         )
     except FileNotFoundError as e:
-        raise UlpfctlError(f"ulpfctl not found at {binary}", "") from e
+        raise LogKramactlError(f"logkramactl not found at {binary}", "") from e
     except subprocess.TimeoutExpired as e:
-        raise UlpfctlError("ulpfctl timed out", str(e)) from e
+        raise LogKramactlError("logkramactl timed out", str(e)) from e
     output = (result.stdout or "") + (result.stderr or "")
     return result.returncode == 0, output
 
 
 def lint(parser_yaml_path: str, repo_root: str) -> tuple[bool, str]:
-    """Runs `ulpfctl parser lint <file>` — DSL validation + unsafe-regex
+    """Runs `logkramactl parser lint <file>` — DSL validation + unsafe-regex
     rejection."""
     return _run(["parser", "lint", parser_yaml_path], cwd=repo_root)
 
@@ -109,7 +109,7 @@ def vault_read(
     """Reads one event's exact original bytes back from the vault, SHA-256
     verified by the Go vault package itself — the control plane never
     re-implements that check. Returns {sha256_verified, length, raw_base64}
-    or raises UlpfctlError with the failure reason (e.g. a mismatch).
+    or raises LogKramactlError with the failure reason (e.g. a mismatch).
     """
     ok, output = _run(
         [
@@ -129,11 +129,11 @@ def vault_read(
         extra_env=_vault_env(settings),
     )
     if not ok:
-        raise UlpfctlError("vault read failed", output)
+        raise LogKramactlError("vault read failed", output)
     try:
         return json.loads(output)
     except json.JSONDecodeError as e:
-        raise UlpfctlError("vault read returned non-JSON output", output) from e
+        raise LogKramactlError("vault read returned non-JSON output", output) from e
 
 
 def vault_prove(
@@ -157,7 +157,7 @@ def vault_prove(
         extra_env=_vault_env(settings),
     )
     if not ok:
-        raise UlpfctlError("vault prove failed", output)
+        raise LogKramactlError("vault prove failed", output)
     # Output is "proof valid: <bool>\n<json>" — the JSON is the second line.
     lines = output.strip().splitlines()
     json_line = lines[-1] if lines else "{}"
@@ -167,7 +167,7 @@ def vault_prove(
         proof["verified"] = True if verdict == "proof valid: true" else False if verdict == "proof valid: false" else None
         return proof
     except json.JSONDecodeError as e:
-        raise UlpfctlError("vault prove returned non-JSON output", output) from e
+        raise LogKramactlError("vault prove returned non-JSON output", output) from e
 
 
 def vault_verify(from_date: str, to_date: str, settings) -> tuple[bool, str]:

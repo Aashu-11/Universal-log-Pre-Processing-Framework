@@ -16,9 +16,9 @@ import (
 
 	"golang.org/x/time/rate"
 
-	"github.com/ulpf/ulpf/internal/collector"
-	"github.com/ulpf/ulpf/internal/collector/batch"
-	"github.com/ulpf/ulpf/internal/telemetry"
+	"github.com/logkrama/logkrama/internal/collector"
+	"github.com/logkrama/logkrama/internal/collector/batch"
+	"github.com/logkrama/logkrama/internal/telemetry"
 )
 
 // HTTPConfig configures the HTTP bulk ingest endpoint (POST /v1/ingest,

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/ulpf/ulpf/internal/telemetry"
+	"github.com/logkrama/logkrama/internal/telemetry"
 )
 
 // NewDefaultPipeline builds every enricher from dir (normally

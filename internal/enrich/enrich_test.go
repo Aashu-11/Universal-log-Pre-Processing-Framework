@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ulpf/ulpf/internal/enrich"
-	"github.com/ulpf/ulpf/internal/schema"
+	"github.com/logkrama/logkrama/internal/enrich"
+	"github.com/logkrama/logkrama/internal/schema"
 )
 
 func repoRoot(t *testing.T) string {

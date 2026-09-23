@@ -1,6 +1,6 @@
 {
-  "title": "ULPF Pipeline Overview",
-  "uid": "ulpf-pipeline-overview",
+  "title": "LogKrama Pipeline Overview",
+  "uid": "logkrama-pipeline-overview",
   "schemaVersion": 39,
   "version": 1,
   "editable": true,
@@ -14,7 +14,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
       "targets": [
         {
-          "expr": "sum by (listener) (rate(ulpf_events_received_total[1m]))",
+          "expr": "sum by (listener) (rate(logkrama_events_received_total[1m]))",
           "legendFormat": "{{listener}}"
         }
       ]
@@ -25,7 +25,7 @@
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
       "targets": [
-        { "expr": "rate(ulpf_udp_drops_total[1m])", "legendFormat": "drops" }
+        { "expr": "rate(logkrama_udp_drops_total[1m])", "legendFormat": "drops" }
       ]
     },
     {
@@ -35,7 +35,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
       "targets": [
         {
-          "expr": "histogram_quantile(0.99, sum(rate(ulpf_vault_write_duration_seconds_bucket[1m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(logkrama_vault_write_duration_seconds_bucket[1m])) by (le))",
           "legendFormat": "p99"
         }
       ]
@@ -46,7 +46,7 @@
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
       "targets": [
-        { "expr": "ulpf_spool_depth", "legendFormat": "{{listener}}" }
+        { "expr": "logkrama_spool_depth", "legendFormat": "{{listener}}" }
       ]
     }
   ]

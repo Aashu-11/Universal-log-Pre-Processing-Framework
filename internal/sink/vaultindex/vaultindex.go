@@ -13,12 +13,12 @@ import (
 
 	pq "github.com/parquet-go/parquet-go"
 
-	"github.com/ulpf/ulpf/internal/collector"
-	"github.com/ulpf/ulpf/internal/vault"
-	"github.com/ulpf/ulpf/internal/vault/store"
+	"github.com/logkrama/logkrama/internal/collector"
+	"github.com/logkrama/logkrama/internal/vault"
+	"github.com/logkrama/logkrama/internal/vault/store"
 )
 
-// IndexRow mirrors vault.ulpf.raw_index (schema/presto/ddl.sql): one row
+// IndexRow mirrors vault.logkrama.raw_index (schema/presto/ddl.sql): one row
 // per event, pointing at its exact position inside a sealed segment.
 type IndexRow struct {
 	EventID   string `parquet:"event_id"`
@@ -29,7 +29,7 @@ type IndexRow struct {
 	Dt        string `parquet:"dt"`
 }
 
-// SegmentRow mirrors vault.ulpf.raw_segments: one row per sealed segment,
+// SegmentRow mirrors vault.logkrama.raw_segments: one row per sealed segment,
 // carrying the Merkle chain CLAUDE.md's traceability query (Q4) joins
 // against.
 type SegmentRow struct {
@@ -44,7 +44,7 @@ type SegmentRow struct {
 
 // IndexSink implements collector.RefPublisher: every durably-vaulted
 // event's (event_id, RawRef) pair is buffered here and rolled to Parquet
-// under s3a://ulpf-raw/index/dt=.../ — the same seal-then-upload shape as
+// under s3a://logkrama-raw/index/dt=.../ — the same seal-then-upload shape as
 // internal/sink/parquet, just keyed by day instead of (dt,hour,vendor).
 type IndexSink struct {
 	st      store.Store
@@ -115,8 +115,8 @@ func randomID() string {
 }
 
 // ExportSegments mirrors one day's vault ledger into Parquet at
-// s3a://ulpf-raw/index/segments/dt=.../ — run periodically (or as part of
-// `ulpfctl partitions sync`, Phase 6's other deliverable) since it reads
+// s3a://logkrama-raw/index/segments/dt=.../ — run periodically (or as part of
+// `logkramactl partitions sync`, Phase 6's other deliverable) since it reads
 // the whole day's ledger.jsonl rather than streaming incrementally.
 func ExportSegments(ctx context.Context, raw, indexStore store.Store, dt string) error {
 	entries, err := vault.ReadLedger(ctx, raw, dt)

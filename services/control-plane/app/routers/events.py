@@ -1,7 +1,7 @@
 """Raw bytes + traceability for one event.
 
 Resolving event_id -> RawRef normally means a Presto query against
-vault.ulpf.raw_index (written by internal/sink/vaultindex — see
+vault.logkrama.raw_index (written by internal/sink/vaultindex — see
 docs/QUERIES.md Q4). That lookup isn't wired here yet since it depends on
 Presto being reachable; both endpoints accept the ref explicitly via query
 params in the meantime (exactly what a Presto-backed lookup would hand this
@@ -15,7 +15,7 @@ from pydantic import BaseModel
 
 from app.config import settings
 from app.security import CurrentUser, require_role
-from app.ulpfctl import UlpfctlError, vault_prove, vault_read
+from app.logkramactl import LogKramactlError, vault_prove, vault_read
 
 router = APIRouter(prefix="/v1/events", tags=["events"])
 
@@ -44,7 +44,7 @@ def get_raw(
 ):
     try:
         result = vault_read(segment_id, offset, length, sha256, settings)
-    except UlpfctlError as e:
+    except LogKramactlError as e:
         raise HTTPException(
             status.HTTP_502_BAD_GATEWAY,
             f"raw bytes retrieval/verification failed: {e.output}",
@@ -71,7 +71,7 @@ def get_trace(
     try:
         raw_result = vault_read(segment_id, offset, length, sha256, settings)
         proof = vault_prove(segment_id, offset, length, sha256, settings)
-    except UlpfctlError as e:
+    except LogKramactlError as e:
         raise HTTPException(
             status.HTTP_502_BAD_GATEWAY, f"trace retrieval failed: {e.output}"
         ) from e

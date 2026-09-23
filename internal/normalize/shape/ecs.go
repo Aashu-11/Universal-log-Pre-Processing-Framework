@@ -3,7 +3,7 @@ package shape
 import (
 	"time"
 
-	"github.com/ulpf/ulpf/internal/schema"
+	"github.com/logkrama/logkrama/internal/schema"
 )
 
 // ECS renders e as a subset of Elastic Common Schema (ECS 8.x field

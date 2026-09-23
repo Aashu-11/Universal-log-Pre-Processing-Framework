@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ulpf/ulpf/internal/normalize"
-	"github.com/ulpf/ulpf/internal/schema"
+	"github.com/logkrama/logkrama/internal/normalize"
+	"github.com/logkrama/logkrama/internal/schema"
 )
 
 // TestFailedEventNeverDrops proves the total-failure path: even with no
@@ -16,7 +16,7 @@ func TestFailedEventNeverDrops(t *testing.T) {
 	raw := schema.Raw{
 		SHA256:       "9a134e421a5579eba9617f5817d6f2929755b22f2c12eef31b4a89a955589bf5",
 		SegmentID:    "seg-1",
-		RetrievalURI: "s3a://ulpf-raw/segments/dt=2026-09-07/seg-1.zst",
+		RetrievalURI: "s3a://logkrama-raw/segments/dt=2026-09-07/seg-1.zst",
 	}
 	lineage := schema.Lineage{ParserID: "source.unknown", ParserVersion: "", NodeID: "node-1"}
 	now := time.Now().UnixNano()

@@ -12,7 +12,7 @@ export interface NexusGraphHandle { resetCamera: () => void }
 
 function endpointId(endpoint: string | GraphNode): string { return typeof endpoint === "string" ? endpoint : endpoint.id; }
 
-/** The supplied LedgerSpy graph interaction, mapped to real ULPF events. */
+/** The supplied LedgerSpy graph interaction, mapped to real LOGKRAMA events. */
 export const NexusGraph = forwardRef<NexusGraphHandle, {
   events: LogVerseEvent[];
   selectedId: string | null;

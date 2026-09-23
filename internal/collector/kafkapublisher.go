@@ -8,13 +8,13 @@ import (
 
 	kg "github.com/segmentio/kafka-go"
 
-	"github.com/ulpf/ulpf/internal/vault"
+	"github.com/logkrama/logkrama/internal/vault"
 )
 
-// RawRefMessage is the wire format published to ulpf.raw.refs — the
+// RawRefMessage is the wire format published to logkrama.raw.refs — the
 // handoff between the collector (which durably vaults raw bytes) and the
 // processor (which reads them back and runs IDENTIFY onward). Shared here
-// so cmd/ulpf-collector's publisher and cmd/ulpf-processor's consumer can't
+// so cmd/logkrama-collector's publisher and cmd/logkrama-processor's consumer can't
 // drift on field names independently.
 type RawRefMessage struct {
 	EventID    string       `json:"event_id"`
@@ -33,7 +33,7 @@ type kafkaProducer interface {
 }
 
 // KafkaPublisher implements RefPublisher by publishing one JSON
-// RawRefMessage per event to ulpf.raw.refs, keyed by event id.
+// RawRefMessage per event to logkrama.raw.refs, keyed by event id.
 type KafkaPublisher struct {
 	prod kafkaProducer
 }

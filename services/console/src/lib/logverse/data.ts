@@ -27,7 +27,7 @@ export const MAX_VISIBLE_PARTICLES = 150; // instanced-mesh capacity actually re
 export const MAX_DLQ_VISIBLE = 80;
 export const MAX_VAULT_BLOCKS_VISIBLE = 20;
 
-// Both `lake.ulpf.events` and `vault.ulpf.raw_segments` are Hive-partitioned
+// Both `lake.logkrama.events` and `vault.logkrama.raw_segments` are Hive-partitioned
 // by `dt`. An unfiltered "ORDER BY ... LIMIT n" still has to touch every
 // partition to determine the true top-n, which gets slow as a demo/dev
 // environment accumulates weeks of small partitions from repeated test
@@ -121,7 +121,7 @@ export function rowToLogVerseEvent(row: unknown[]): LogVerseEvent {
 
 export async function fetchLogVerseEvents(limit: number): Promise<LogVerseEvent[]> {
   const sql = `SELECT ${EVENT_COLUMNS.join(", ")}\nFROM events\nWHERE ${recentDtFilter()}\nORDER BY event_ingested_at DESC\nLIMIT ${limit}`;
-  const resp = await controlPlane.post<QueryResponse>("/v1/query", { sql, catalog: "lake", schema_: "ulpf" });
+  const resp = await controlPlane.post<QueryResponse>("/v1/query", { sql, catalog: "lake", schema_: "logkrama" });
   return resp.rows.map(rowToLogVerseEvent);
 }
 
@@ -198,7 +198,7 @@ const VAULT_COLUMNS = ["segment_id", "merkle_root", "prev_root", "event_count", 
 
 export async function fetchVaultChain(limit: number): Promise<VaultBlock[]> {
   const sql = `SELECT ${VAULT_COLUMNS.join(", ")} FROM raw_segments WHERE ${recentDtFilter()} ORDER BY sealed_at_ns DESC LIMIT ${limit}`;
-  const resp = await controlPlane.post<QueryResponse>("/v1/query", { sql, catalog: "vault", schema_: "ulpf" });
+  const resp = await controlPlane.post<QueryResponse>("/v1/query", { sql, catalog: "vault", schema_: "logkrama" });
   const blocks = resp.rows.map((row) => {
     const g = (name: (typeof VAULT_COLUMNS)[number]) => row[VAULT_COLUMNS.indexOf(name)];
     return {
@@ -286,7 +286,7 @@ export async function fetchForensicTrace(ev: LogVerseEvent): Promise<ForensicTra
 }
 
 /** Derives events/sec from two counter samples of the collector's
- * Prometheus `ulpf_events_received_total`. This is NEVER a server-measured
+ * Prometheus `logkrama_events_received_total`. This is NEVER a server-measured
  * rate — the API only exposes the running counter — so every caller must
  * label it as derived (see DerivedEps). Returns null when there isn't yet a
  * second sample, or the counter went backwards (a service restart). */

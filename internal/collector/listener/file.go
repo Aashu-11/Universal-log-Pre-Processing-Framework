@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/ulpf/ulpf/internal/collector"
-	"github.com/ulpf/ulpf/internal/collector/batch"
-	"github.com/ulpf/ulpf/internal/telemetry"
+	"github.com/logkrama/logkrama/internal/collector"
+	"github.com/logkrama/logkrama/internal/collector/batch"
+	"github.com/logkrama/logkrama/internal/telemetry"
 )
 
 // FileConfig configures the directory file-tail listener.
@@ -30,7 +30,7 @@ func (c FileConfig) withDefaults() FileConfig {
 		c.PollInterval = time.Second
 	}
 	if c.CheckpointPath == "" {
-		c.CheckpointPath = filepath.Join(c.Dir, ".ulpf-checkpoint.json")
+		c.CheckpointPath = filepath.Join(c.Dir, ".logkrama-checkpoint.json")
 	}
 	return c
 }

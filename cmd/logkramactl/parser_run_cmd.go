@@ -9,14 +9,14 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ulpf/ulpf/internal/normalize"
-	"github.com/ulpf/ulpf/internal/normalize/shape"
-	"github.com/ulpf/ulpf/internal/parse"
-	"github.com/ulpf/ulpf/internal/parse/ops"
-	"github.com/ulpf/ulpf/internal/schema"
+	"github.com/logkrama/logkrama/internal/normalize"
+	"github.com/logkrama/logkrama/internal/normalize/shape"
+	"github.com/logkrama/logkrama/internal/parse"
+	"github.com/logkrama/logkrama/internal/parse/ops"
+	"github.com/logkrama/logkrama/internal/schema"
 )
 
-// runResult is one line's result from `ulpfctl parser run` — extraction
+// runResult is one line's result from `logkramactl parser run` — extraction
 // plus (if a mapping was supplied) the resulting UES fields, in one JSON
 // object per input line. This is what Phase 8's onboarding engine and the
 // Phase 9 Parser Workbench's live re-parse both drive off of: one binary,

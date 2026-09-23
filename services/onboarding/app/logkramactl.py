@@ -1,4 +1,4 @@
-"""Subprocess wrapper around bin/ulpfctl.exe — same rationale as the control
+"""Subprocess wrapper around bin/logkramactl.exe — same rationale as the control
 plane's identical module: one real validator/executor shared across
 languages instead of two independently-drifting implementations. See
 docs/DECISIONS.md D-008.
@@ -11,25 +11,25 @@ import subprocess
 from pathlib import Path
 
 
-class UlpfctlError(RuntimeError):
+class LogKramactlError(RuntimeError):
     def __init__(self, message: str, output: str):
         super().__init__(message)
         self.output = output
 
 
 def _binary_path(repo_root: str) -> str:
-    env_path = os.environ.get("ULPFCTL_PATH")
+    env_path = os.environ.get("LOGKRAMACTL_PATH")
     if env_path:
         return env_path
-    for name in ("ulpfctl.exe", "ulpfctl"):
+    for name in ("logkramactl.exe", "logkramactl"):
         candidate = Path(repo_root) / "bin" / name
         if candidate.exists():
             return str(candidate)
-    found = shutil.which("ulpfctl")
+    found = shutil.which("logkramactl")
     if found:
         return found
-    raise UlpfctlError(
-        "ulpfctl binary not found", "set ULPFCTL_PATH or build bin/ulpfctl(.exe)"
+    raise LogKramactlError(
+        "logkramactl binary not found", "set LOGKRAMACTL_PATH or build bin/logkramactl(.exe)"
     )
 
 
@@ -52,7 +52,7 @@ def run_parser(
     repo_root: str,
 ) -> list[dict]:
     """Runs the candidate parser (and optional mapping) against every
-    sample line via `ulpfctl parser run`, returning the parsed JSON-lines
+    sample line via `logkramactl parser run`, returning the parsed JSON-lines
     output as a list of dicts — one per input line, in order.
     """
     binary = _binary_path(repo_root)
@@ -69,7 +69,7 @@ def run_parser(
         timeout=60,
     )
     if result.returncode != 0:
-        raise UlpfctlError("parser run failed", result.stderr or result.stdout)
+        raise LogKramactlError("parser run failed", result.stderr or result.stdout)
 
     out = []
     for line in result.stdout.splitlines():
@@ -82,7 +82,7 @@ def run_parser(
 def run_shapes(
     parser_yaml_path: str, mapping_yaml_path: str, sample_line: str, repo_root: str
 ) -> dict:
-    """Runs one line through `ulpfctl parser run --shapes`, returning the
+    """Runs one line through `logkramactl parser run --shapes`, returning the
     single JSON result with its `shapes` field — the same UES event
     rendered as UES/ECS/OCSF/CEF (PS requirement (g)), computed for real by
     internal/normalize/shape, never faked in the console.
@@ -107,8 +107,8 @@ def run_shapes(
         timeout=30,
     )
     if result.returncode != 0:
-        raise UlpfctlError("parser run --shapes failed", result.stderr or result.stdout)
+        raise LogKramactlError("parser run --shapes failed", result.stderr or result.stdout)
     lines = [line for line in result.stdout.splitlines() if line.strip()]
     if not lines:
-        raise UlpfctlError("parser run --shapes produced no output", result.stdout)
+        raise LogKramactlError("parser run --shapes produced no output", result.stdout)
     return json.loads(lines[0])

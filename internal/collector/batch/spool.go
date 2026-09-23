@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/ulpf/ulpf/internal/collector"
+	"github.com/logkrama/logkrama/internal/collector"
 )
 
 // spool is a simple disk-backed FIFO of RawEvents: one growing file,
@@ -39,7 +39,7 @@ func newSpool(dir, listenerID string) (*spool, error) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, fmt.Errorf("mkdir spool dir: %w", err)
 	}
-	path := filepath.Join(dir, fmt.Sprintf("ulpf-spool-%s-%d.bin", listenerID, os.Getpid()))
+	path := filepath.Join(dir, fmt.Sprintf("logkrama-spool-%s-%d.bin", listenerID, os.Getpid()))
 
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0o644)
 	if err != nil {

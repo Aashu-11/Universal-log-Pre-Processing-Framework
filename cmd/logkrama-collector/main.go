@@ -1,4 +1,4 @@
-// Command ulpf-collector runs the multi-protocol ingest layer that writes
+// Command logkrama-collector runs the multi-protocol ingest layer that writes
 // incoming logs to the Raw Vault and publishes raw references to Kafka.
 package main
 
@@ -18,13 +18,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/ulpf/ulpf/internal/collector"
-	"github.com/ulpf/ulpf/internal/collector/batch"
-	"github.com/ulpf/ulpf/internal/collector/listener"
-	"github.com/ulpf/ulpf/internal/sink/vaultindex"
-	"github.com/ulpf/ulpf/internal/telemetry"
-	"github.com/ulpf/ulpf/internal/vault"
-	"github.com/ulpf/ulpf/internal/vault/store"
+	"github.com/logkrama/logkrama/internal/collector"
+	"github.com/logkrama/logkrama/internal/collector/batch"
+	"github.com/logkrama/logkrama/internal/collector/listener"
+	"github.com/logkrama/logkrama/internal/sink/vaultindex"
+	"github.com/logkrama/logkrama/internal/telemetry"
+	"github.com/logkrama/logkrama/internal/vault"
+	"github.com/logkrama/logkrama/internal/vault/store"
 )
 
 // Version is set at build time via -ldflags "-X main.Version=...".
@@ -36,12 +36,12 @@ func main() {
 	flag.Parse()
 
 	if *showVersion {
-		fmt.Printf("ulpf-collector %s\n", Version)
+		fmt.Printf("logkrama-collector %s\n", Version)
 		return
 	}
 
 	if err := run(*metricsAddr); err != nil {
-		fmt.Fprintf(os.Stderr, "ulpf-collector: %v\n", err)
+		fmt.Fprintf(os.Stderr, "logkrama-collector: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -55,9 +55,9 @@ func run(metricsAddr string) error {
 		return fmt.Errorf("open store: %w", err)
 	}
 	v := vault.New(st, vault.Config{
-		MaxSegmentBytes: envInt64("ULPF_VAULT_SEGMENT_MAX_BYTES", 64<<20),
-		MaxSegmentAge:   time.Duration(envInt64("ULPF_VAULT_SEGMENT_MAX_SECONDS", 300)) * time.Second,
-		NodeID:          envOr("ULPF_NODE_ID", "collector-1"),
+		MaxSegmentBytes: envInt64("LOGKRAMA_VAULT_SEGMENT_MAX_BYTES", 64<<20),
+		MaxSegmentAge:   time.Duration(envInt64("LOGKRAMA_VAULT_SEGMENT_MAX_SECONDS", 300)) * time.Second,
+		NodeID:          envOr("LOGKRAMA_NODE_ID", "collector-1"),
 	})
 	if err := v.Bootstrap(context.Background()); err != nil {
 		return fmt.Errorf("bootstrap vault chain: %w", err)
@@ -75,7 +75,7 @@ func run(metricsAddr string) error {
 	if err != nil {
 		return err
 	}
-	fileDir := envOr("ULPF_FILE_TAIL_DIR", "./data/filedrop")
+	fileDir := envOr("LOGKRAMA_FILE_TAIL_DIR", "./data/filedrop")
 	if err := os.MkdirAll(fileDir, 0o755); err != nil {
 		return fmt.Errorf("create file-tail dir: %w", err)
 	}
@@ -84,9 +84,9 @@ func run(metricsAddr string) error {
 		return err
 	}
 
-	udp := listener.NewUDP(listener.UDPConfig{Addr: envOr("ULPF_SYSLOG_UDP_ADDR", ":5514"), ListenerID: "syslog-udp"}, udpBuf, m)
-	tcp := listener.NewTCP(listener.TCPConfig{Addr: envOr("ULPF_SYSLOG_TCP_ADDR", ":6601"), ListenerID: "syslog-tcp"}, tcpBuf, m)
-	httpL := listener.NewHTTP(listener.HTTPConfig{Addr: envOr("ULPF_HTTP_ADDR", ":8088"), ListenerID: "http-bulk"}, httpBuf, m)
+	udp := listener.NewUDP(listener.UDPConfig{Addr: envOr("LOGKRAMA_SYSLOG_UDP_ADDR", ":5514"), ListenerID: "syslog-udp"}, udpBuf, m)
+	tcp := listener.NewTCP(listener.TCPConfig{Addr: envOr("LOGKRAMA_SYSLOG_TCP_ADDR", ":6601"), ListenerID: "syslog-tcp"}, tcpBuf, m)
+	httpL := listener.NewHTTP(listener.HTTPConfig{Addr: envOr("LOGKRAMA_HTTP_ADDR", ":8088"), ListenerID: "http-bulk"}, httpBuf, m)
 	fileL := listener.NewFile(listener.FileConfig{Dir: fileDir, ListenerID: "file-tail"}, fileBuf, m)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -131,16 +131,16 @@ func run(metricsAddr string) error {
 	metricsSrv := &http.Server{Addr: metricsAddr, Handler: metricsMux}
 	go func() { errCh <- metricsSrv.ListenAndServe() }()
 
-	fmt.Printf("ulpf-collector: listening udp=%s tcp=%s http=%s metrics=%s\n",
-		envOr("ULPF_SYSLOG_UDP_ADDR", ":5514"), envOr("ULPF_SYSLOG_TCP_ADDR", ":6601"),
-		envOr("ULPF_HTTP_ADDR", ":8088"), metricsAddr)
+	fmt.Printf("logkrama-collector: listening udp=%s tcp=%s http=%s metrics=%s\n",
+		envOr("LOGKRAMA_SYSLOG_UDP_ADDR", ":5514"), envOr("LOGKRAMA_SYSLOG_TCP_ADDR", ":6601"),
+		envOr("LOGKRAMA_HTTP_ADDR", ":8088"), metricsAddr)
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 
 	select {
 	case <-sig:
-		fmt.Println("ulpf-collector: shutting down")
+		fmt.Println("logkrama-collector: shutting down")
 		cancel()
 		return v.Seal(context.Background())
 	case err := <-errCh:
@@ -152,24 +152,24 @@ func run(metricsAddr string) error {
 func openStore() (store.Store, error) {
 	if endpoint := os.Getenv("MINIO_ENDPOINT"); endpoint != "" {
 		return store.NewMinIO(endpoint, os.Getenv("MINIO_ACCESS_KEY"), os.Getenv("MINIO_SECRET_KEY"),
-			envOr("MINIO_RAW_BUCKET", "ulpf-raw"), os.Getenv("MINIO_USE_SSL") == "true")
+			envOr("MINIO_RAW_BUCKET", "logkrama-raw"), os.Getenv("MINIO_USE_SSL") == "true")
 	}
-	dir := envOr("ULPF_VAULT_LOCAL_DIR", "./data/vault")
+	dir := envOr("LOGKRAMA_VAULT_LOCAL_DIR", "./data/vault")
 	return store.NewLocal(dir)
 }
 
 // openRefPublisher returns a real Kafka publisher when KAFKA_BROKERS is
 // set, else NoopPublisher — so the collector runs standalone (vault-only,
-// no Kafka needed) for local dev/tests — and publishes to ulpf.raw.refs for
-// cmd/ulpf-processor to pick up once Kafka is reachable. Every entry is
-// additionally fanned out to indexSink so vault.ulpf.raw_index (Presto's
+// no Kafka needed) for local dev/tests — and publishes to logkrama.raw.refs for
+// cmd/logkrama-processor to pick up once Kafka is reachable. Every entry is
+// additionally fanned out to indexSink so vault.logkrama.raw_index (Presto's
 // per-event chain-of-custody index) actually gets populated, without that
 // secondary write ever blocking or failing the primary Kafka handoff.
 func openRefPublisher(indexSink *vaultindex.IndexSink) collector.RefPublisher {
 	var primary collector.RefPublisher = collector.NoopPublisher{}
 	if brokersEnv := os.Getenv("KAFKA_BROKERS"); brokersEnv != "" {
 		brokers := strings.Split(brokersEnv, ",")
-		topic := envOr("KAFKA_TOPIC_RAW_REFS", "ulpf.raw.refs")
+		topic := envOr("KAFKA_TOPIC_RAW_REFS", "logkrama.raw.refs")
 		primary = collector.NewKafkaPublisher(brokers, topic)
 	}
 	return &collector.FanoutPublisher{Primary: primary, Secondary: []collector.RefPublisher{indexSink}}
@@ -189,7 +189,7 @@ func flushIndexSink(ctx context.Context, s *vaultindex.IndexSink) {
 			return
 		case <-ticker.C:
 			if err := s.Flush(ctx); err != nil {
-				fmt.Fprintf(os.Stderr, "ulpf-collector: index sink flush failed: %v\n", err)
+				fmt.Fprintf(os.Stderr, "logkrama-collector: index sink flush failed: %v\n", err)
 			}
 		}
 	}
@@ -210,7 +210,7 @@ func runSealTicker(ctx context.Context, v *vault.Vault) {
 			return
 		case <-ticker.C:
 			if err := v.SealIfStale(ctx); err != nil {
-				fmt.Fprintf(os.Stderr, "ulpf-collector: periodic seal check failed: %v\n", err)
+				fmt.Fprintf(os.Stderr, "logkrama-collector: periodic seal check failed: %v\n", err)
 			}
 		}
 	}

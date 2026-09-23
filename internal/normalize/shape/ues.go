@@ -5,7 +5,7 @@
 // inspectable outputs.
 package shape
 
-import "github.com/ulpf/ulpf/internal/schema"
+import "github.com/logkrama/logkrama/internal/schema"
 
 // UES returns the event exactly as normalized — the native shape every
 // other Render function starts from.

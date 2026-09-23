@@ -1,5 +1,5 @@
 """Integration tests for the publish pipeline — shells to the real
-bin/ulpfctl.exe for lint + fixture testing, same as test_integrity.py.
+bin/logkramactl.exe for lint + fixture testing, same as test_integrity.py.
 """
 
 import os
@@ -10,10 +10,10 @@ import pytest
 from app.config import settings
 
 REPO_ROOT = Path(settings.repo_root)
-ULPFCTL = REPO_ROOT / "bin" / ("ulpfctl.exe" if os.name == "nt" else "ulpfctl")
+LOGKRAMACTL = REPO_ROOT / "bin" / ("logkramactl.exe" if os.name == "nt" else "logkramactl")
 
 pytestmark = pytest.mark.skipif(
-    not ULPFCTL.exists(), reason="bin/ulpfctl not built — run go build first"
+    not LOGKRAMACTL.exists(), reason="bin/logkramactl not built — run go build first"
 )
 
 

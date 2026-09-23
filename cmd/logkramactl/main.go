@@ -1,4 +1,4 @@
-// Command ulpfctl is the ULPF operator CLI: vault integrity operations,
+// Command logkramactl is the LOGKRAMA operator CLI: vault integrity operations,
 // parser testing/linting, partition sync and pipeline stats.
 package main
 
@@ -14,8 +14,8 @@ var Version = "dev"
 
 func main() {
 	root := &cobra.Command{
-		Use:     "ulpfctl",
-		Short:   "ULPF operator CLI",
+		Use:     "logkramactl",
+		Short:   "LOGKRAMA operator CLI",
 		Version: Version,
 	}
 	root.AddCommand(newVaultCmd())

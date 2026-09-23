@@ -1,6 +1,6 @@
 """PS requirement (g): one real parsed+mapped event rendered as
 UES/ECS/OCSF/CEF, computed by internal/normalize/shape via
-`ulpfctl parser run --shapes` — see app/routers/onboarding.py's /shapes.
+`logkramactl parser run --shapes` — see app/routers/onboarding.py's /shapes.
 """
 
 import os
@@ -11,10 +11,10 @@ import pytest
 from app.config import settings
 
 REPO_ROOT = Path(settings.repo_root)
-ULPFCTL = REPO_ROOT / "bin" / ("ulpfctl.exe" if os.name == "nt" else "ulpfctl")
+LOGKRAMACTL = REPO_ROOT / "bin" / ("logkramactl.exe" if os.name == "nt" else "logkramactl")
 
 pytestmark = pytest.mark.skipif(
-    not ULPFCTL.exists(), reason="bin/ulpfctl not built — run go build first"
+    not LOGKRAMACTL.exists(), reason="bin/logkramactl not built — run go build first"
 )
 
 PARSER_YAML = """

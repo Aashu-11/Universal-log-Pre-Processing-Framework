@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ulpf/ulpf/internal/parse/dsl"
-	"github.com/ulpf/ulpf/internal/parse/fields"
-	"github.com/ulpf/ulpf/internal/parse/ops"
+	"github.com/logkrama/logkrama/internal/parse/dsl"
+	"github.com/logkrama/logkrama/internal/parse/fields"
+	"github.com/logkrama/logkrama/internal/parse/ops"
 )
 
 // Parse status values, mirrored from internal/schema to avoid a dependency

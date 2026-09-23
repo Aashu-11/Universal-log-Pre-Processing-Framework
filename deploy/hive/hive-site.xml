@@ -10,7 +10,7 @@
 <configuration>
   <property>
     <name>hive.metastore.warehouse.dir</name>
-    <value>s3a://ulpf-lake/warehouse</value>
+    <value>s3a://logkrama-lake/warehouse</value>
   </property>
 
   <property>
@@ -45,12 +45,12 @@
 
   <property>
     <name>fs.s3a.access.key</name>
-    <value>ulpfadmin</value>
+    <value>logkramaadmin</value>
   </property>
 
   <property>
     <name>fs.s3a.secret.key</name>
-    <value>ulpf_dev_only</value>
+    <value>logkrama_dev_only</value>
   </property>
 
   <property>

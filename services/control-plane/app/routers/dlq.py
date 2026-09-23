@@ -1,5 +1,5 @@
 """DLQ inspection + replay. Rows here are populated by a Kafka consumer
-bridging the ulpf.dlq topic into this table — not yet wired end-to-end
+bridging the logkrama.dlq topic into this table — not yet wired end-to-end
 since it needs a reachable Kafka broker to test against (see
 docs/DECISIONS.md). POST /v1/dlq lets a bridge (or a test) insert one row
 directly in the meantime; the read/replay endpoints are fully real either
@@ -83,7 +83,7 @@ def replay(
     user: CurrentUser = Depends(require_role("admin", "engineer")),
 ):
     """Marks the given DLQ events resolved. Actually re-driving them through
-    the pipeline (re-publishing their raw_ref to ulpf.raw.refs) is the
+    the pipeline (re-publishing their raw_ref to logkrama.raw.refs) is the
     natural next step once a parser fix is published — that publish call is
     a one-line Kafka produce once a broker is reachable to test against;
     marking-resolved is what's verifiable without one, so that's what's

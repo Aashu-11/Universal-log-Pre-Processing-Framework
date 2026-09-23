@@ -1,4 +1,4 @@
-// Command ulpf-dlq-bridge consumes the ulpf.dlq Kafka topic and forwards
+// Command logkrama-dlq-bridge consumes the logkrama.dlq Kafka topic and forwards
 // each entry to the control plane's POST /v1/dlq, populating the
 // meta.dlq_events table (and so the console's DLQ page) with the real
 // reason(s) route.Router attached — see internal/sink/kafka.Sink.WriteDLQ
@@ -21,12 +21,12 @@ import (
 
 	kg "github.com/segmentio/kafka-go"
 
-	sinkkafka "github.com/ulpf/ulpf/internal/sink/kafka"
+	sinkkafka "github.com/logkrama/logkrama/internal/sink/kafka"
 )
 
 func main() {
 	if err := run(); err != nil {
-		fmt.Fprintf(os.Stderr, "ulpf-dlq-bridge: %v\n", err)
+		fmt.Fprintf(os.Stderr, "logkrama-dlq-bridge: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -40,13 +40,13 @@ type dlqEventIn struct {
 
 func run() error {
 	brokers := strings.Split(envOr("KAFKA_BROKERS", "localhost:29092"), ",")
-	topic := envOr("KAFKA_TOPIC_DLQ", "ulpf.dlq")
-	controlPlaneURL := envOr("ULPF_CONTROL_PLANE_URL", "http://localhost:8000")
+	topic := envOr("KAFKA_TOPIC_DLQ", "logkrama.dlq")
+	controlPlaneURL := envOr("LOGKRAMA_CONTROL_PLANE_URL", "http://localhost:8000")
 
 	reader := kg.NewReader(kg.ReaderConfig{
 		Brokers: brokers,
 		Topic:   topic,
-		GroupID: "ulpf-dlq-bridge",
+		GroupID: "logkrama-dlq-bridge",
 	})
 	defer reader.Close()
 
@@ -60,14 +60,14 @@ func run() error {
 	}()
 
 	client := &http.Client{Timeout: 5 * time.Second}
-	fmt.Printf("ulpf-dlq-bridge: bridging %s -> %s/v1/dlq\n", topic, controlPlaneURL)
+	fmt.Printf("logkrama-dlq-bridge: bridging %s -> %s/v1/dlq\n", topic, controlPlaneURL)
 
 	forwarded := 0
 	for {
 		msg, err := reader.ReadMessage(ctx)
 		if err != nil {
 			if ctx.Err() != nil {
-				fmt.Printf("ulpf-dlq-bridge: shutting down, forwarded %d\n", forwarded)
+				fmt.Printf("logkrama-dlq-bridge: shutting down, forwarded %d\n", forwarded)
 				return nil
 			}
 			return fmt.Errorf("read message: %w", err)
@@ -75,7 +75,7 @@ func run() error {
 
 		var dm sinkkafka.DLQMessage
 		if err := json.Unmarshal(msg.Value, &dm); err != nil {
-			fmt.Fprintf(os.Stderr, "ulpf-dlq-bridge: bad message, skipping: %v\n", err)
+			fmt.Fprintf(os.Stderr, "logkrama-dlq-bridge: bad message, skipping: %v\n", err)
 			continue
 		}
 
@@ -97,7 +97,7 @@ func run() error {
 		}
 
 		if err := postDLQEvent(ctx, client, controlPlaneURL, body); err != nil {
-			fmt.Fprintf(os.Stderr, "ulpf-dlq-bridge: forward %s failed: %v\n", dm.EventID, err)
+			fmt.Fprintf(os.Stderr, "logkrama-dlq-bridge: forward %s failed: %v\n", dm.EventID, err)
 			continue
 		}
 		forwarded++

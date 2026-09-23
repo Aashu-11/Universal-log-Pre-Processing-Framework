@@ -9,8 +9,8 @@ import (
 
 	kg "github.com/segmentio/kafka-go"
 
-	"github.com/ulpf/ulpf/internal/collector"
-	"github.com/ulpf/ulpf/internal/vault"
+	"github.com/logkrama/logkrama/internal/collector"
+	"github.com/logkrama/logkrama/internal/vault"
 )
 
 type fakeProducer struct {

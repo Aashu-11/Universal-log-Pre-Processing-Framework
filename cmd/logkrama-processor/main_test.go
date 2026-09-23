@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ulpf/ulpf/internal/vault"
-	"github.com/ulpf/ulpf/internal/vault/store"
+	"github.com/logkrama/logkrama/internal/vault"
+	"github.com/logkrama/logkrama/internal/vault/store"
 )
 
 // TestReadWithRetrySucceedsImmediatelyOnSealedSegment guards the common
@@ -44,11 +44,11 @@ func TestReadWithRetrySucceedsImmediatelyOnSealedSegment(t *testing.T) {
 
 // TestReadWithRetryRespectsCallerDeadline is a regression test for a real
 // bug: the retry deadline used to be a hardcoded 20s constant, well under
-// the collector's default ULPF_VAULT_SEGMENT_MAX_SECONDS (300s) — meaning a
+// the collector's default LOGKRAMA_VAULT_SEGMENT_MAX_SECONDS (300s) — meaning a
 // ref for an event near the front of a freshly-opened segment would be
 // permanently, silently dropped long before that segment ever had a chance
 // to seal. The deadline must be a caller-supplied parameter (wired from
-// ULPF_VAULT_READ_RETRY_SECONDS in main()), not a fixed constant, and must
+// LOGKRAMA_VAULT_READ_RETRY_SECONDS in main()), not a fixed constant, and must
 // actually be honored — this proves both: a short deadline gives up close
 // to on time (not instantly, not way past it) for a segment that will never
 // exist.

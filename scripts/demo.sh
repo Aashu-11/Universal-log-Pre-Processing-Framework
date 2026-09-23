@@ -26,23 +26,23 @@ LOGGEN=./bin/loggen.exe
 echo ""
 echo "### 4/5 — waiting ~65s for the demo segment-seal window, then syncing Presto partitions"
 sleep 65
-docker exec ulpf-presto presto-cli --server localhost:8080 --catalog lake --schema ulpf \
-  --execute "CALL system.sync_partition_metadata('ulpf', 'events', 'FULL')"
+docker exec logkrama-presto presto-cli --server localhost:8080 --catalog lake --schema logkrama \
+  --execute "CALL system.sync_partition_metadata('logkrama', 'events', 'FULL')"
 
 echo ""
 echo "### 5/5 — real results, queried live"
 echo "--- total normalized events in the lake ---"
-docker exec ulpf-presto presto-cli --server localhost:8080 --catalog lake --schema ulpf \
+docker exec logkrama-presto presto-cli --server localhost:8080 --catalog lake --schema logkrama \
   --execute "SELECT count(*) AS total_events FROM events"
 
 echo "--- per-vendor breakdown ---"
-docker exec ulpf-presto presto-cli --server localhost:8080 --catalog lake --schema ulpf \
+docker exec logkrama-presto presto-cli --server localhost:8080 --catalog lake --schema logkrama \
   --execute "SELECT vendor, count(*) FROM events GROUP BY vendor ORDER BY 2 DESC"
 
 echo "--- integrity: Merkle chain verification for today's segments ---"
-docker exec -e MINIO_ENDPOINT=minio:9000 -e MINIO_ACCESS_KEY=ulpfadmin \
-  -e MINIO_SECRET_KEY=ulpf_dev_only -e MINIO_RAW_BUCKET=ulpf-raw -e MINIO_USE_SSL=false \
-  ulpf-collector /app/ulpfctl vault verify --from "$(date -u +%Y-%m-%d)" --to "$(date -u +%Y-%m-%d)" || true
+docker exec -e MINIO_ENDPOINT=minio:9000 -e MINIO_ACCESS_KEY=logkramaadmin \
+  -e MINIO_SECRET_KEY=logkrama_dev_only -e MINIO_RAW_BUCKET=logkrama-raw -e MINIO_USE_SSL=false \
+  logkrama-collector /app/logkramactl vault verify --from "$(date -u +%Y-%m-%d)" --to "$(date -u +%Y-%m-%d)" || true
 
 echo ""
 echo "Done. Open the console at http://localhost:5173 (admin/admin) — Pipeline"

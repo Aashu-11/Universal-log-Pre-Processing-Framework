@@ -1,6 +1,6 @@
 package shape
 
-import "github.com/ulpf/ulpf/internal/schema"
+import "github.com/logkrama/logkrama/internal/schema"
 
 // OCSF renders e as an OCSF "Network Activity" event (class_uid 4001,
 // category_uid 4 "Network Activity"), the OCSF class perimeter-device
