@@ -6,13 +6,16 @@ directly in the meantime; the read/replay endpoints are fully real either
 way.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
+import json
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from kafka import KafkaProducer
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app import audit
+from app.config import settings
 from app.db import get_db
 from app.models import DLQEvent
 from app.schemas import ORMModel
@@ -76,6 +79,28 @@ class ReplayResponse(BaseModel):
     not_found: list[str]
 
 
+def _publish_replay(event_id: str, raw_ref: dict) -> None:
+    """Return an immutable raw reference to the processor's normal ingress."""
+    message = {
+        "event_id": event_id,
+        "ref": raw_ref,
+        "listener_id": "dlq-replay",
+        "peer_ip": "",
+        "received_at": datetime.now(timezone.utc).isoformat(),
+    }
+    producer = KafkaProducer(
+        bootstrap_servers=[broker.strip() for broker in settings.kafka_brokers.split(",")],
+        value_serializer=lambda value: json.dumps(value).encode("utf-8"),
+        acks="all",
+        retries=3,
+        request_timeout_ms=10_000,
+    )
+    try:
+        producer.send(settings.kafka_topic_raw_refs, key=event_id.encode("utf-8"), value=message).get(timeout=15)
+    finally:
+        producer.close(timeout=5)
+
+
 @router.post("/replay", response_model=ReplayResponse)
 def replay(
     body: ReplayRequest,
@@ -95,6 +120,14 @@ def replay(
         if row is None:
             not_found.append(event_id)
             continue
+        try:
+            _publish_replay(row.event_id, row.raw_ref)
+        except Exception as exc:
+            # A record is resolved only after Kafka accepts the replay.
+            raise HTTPException(
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+                f"replay for {event_id} was not accepted by Kafka: {exc}",
+            ) from exc
         row.resolved = True
         resolved.append(event_id)
     audit.log(

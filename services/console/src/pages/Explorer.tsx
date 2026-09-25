@@ -16,6 +16,7 @@ const CATALOGS = [
 
 export function Explorer() {
   const [sql, setSql] = useState(SAVED_QUERIES[0]?.sql ?? "");
+  const [search, setSearch] = useState("");
   const [result, setResult] = useState<QueryResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
@@ -41,6 +42,24 @@ export function Explorer() {
     }
   };
 
+  const applyGuidedSearch = (kind: "any" | "ip" | "blocked" | "threat") => {
+    const escaped = search.trim().replace(/'/g, "''");
+    if (!escaped && kind !== "blocked") return;
+    const predicate = kind === "ip"
+      ? `(src_ip = '${escaped}' OR dst_ip = '${escaped}')`
+      : kind === "blocked"
+        ? "event_action IN ('blocked', 'deny', 'dropped')"
+        : kind === "threat"
+          ? `(lower(threat_category) LIKE '%${escaped.toLowerCase()}%' OR lower(threat_signature_name) LIKE '%${escaped.toLowerCase()}%')`
+          : `(lower(observer_vendor) LIKE '%${escaped.toLowerCase()}%' OR lower(event_action) LIKE '%${escaped.toLowerCase()}%' OR lower(src_ip) LIKE '%${escaped.toLowerCase()}%' OR lower(dst_ip) LIKE '%${escaped.toLowerCase()}%')`;
+    setSql(`SELECT event_observed_at, observer_vendor, event_action, src_ip, dst_ip, dst_port,
+       threat_category, enrich_risk_score, quality_score, event_id
+FROM lake.logkrama.events
+WHERE ${predicate}
+ORDER BY event_observed_at DESC
+LIMIT 200`);
+  };
+
   return (
     <div className="space-y-6">
       <h1 className="text-[16px] font-semibold text-[var(--color-text)]">Explorer</h1>
@@ -54,6 +73,25 @@ export function Explorer() {
               <div className="mt-1 text-[11px] text-[var(--color-text-secondary)]">{c.purpose}</div>
             </div>
           ))}
+        </div>
+      </Card>
+
+      <Card title="Guided investigation">
+        <p className="mb-3 text-[12px] text-[var(--color-text-muted)]">Generate a safe, read-only event search from a question, indicator, or action.</p>
+        <div className="flex flex-col gap-3 lg:flex-row">
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            onKeyDown={(event) => { if (event.key === "Enter") applyGuidedSearch("any"); }}
+            placeholder="Search a vendor, IP address, action, or threat name"
+            className="min-w-0 flex-1 rounded border border-[var(--color-border-strong)] bg-black/30 px-3 py-2 text-[13px] text-[var(--color-text)] outline-none focus:border-[var(--color-accent)]"
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => applyGuidedSearch("any")}>Find events</Button>
+            <Button variant="secondary" onClick={() => applyGuidedSearch("ip")}>Trace IP</Button>
+            <Button variant="secondary" onClick={() => applyGuidedSearch("threat")}>Find threat</Button>
+            <Button variant="secondary" onClick={() => applyGuidedSearch("blocked")}>Blocked traffic</Button>
+          </div>
         </div>
       </Card>
 

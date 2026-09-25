@@ -4,7 +4,7 @@ import { NavLink } from "react-router-dom";
 import { useAuth } from "../../lib/auth";
 import { Badge } from "../ui/Badge";
 
-type IconName = "activity" | "pipeline" | "sources" | "search" | "trace" | "code" | "alert" | "shield" | "cube";
+type IconName = "activity" | "pipeline" | "sources" | "search" | "trace" | "code" | "alert" | "shield" | "cube" | "spark";
 
 const NAV_ITEMS: { to: string; label: string; description: string; icon: IconName; end?: boolean }[] = [
   { to: "/", label: "Live Theater", description: "Event stream", icon: "activity", end: true },
@@ -14,6 +14,7 @@ const NAV_ITEMS: { to: string; label: string; description: string; icon: IconNam
   { to: "/explorer", label: "Explorer", description: "Federated search", icon: "search" },
   { to: "/traceability", label: "Traceability", description: "Chain of custody", icon: "trace" },
   { to: "/workbench", label: "Parser Workbench", description: "Detection engineering", icon: "code" },
+  { to: "/assistant", label: "Investigation Assistant", description: "Offline triage & parser help", icon: "spark" },
   { to: "/dlq", label: "Dead Letter Queue", description: "Exception review", icon: "alert" },
   { to: "/reviewer", label: "Reviewer Mode", description: "Control validation", icon: "shield" },
 ];
@@ -120,6 +121,7 @@ function NavIcon({ name }: { name: IconName }) {
     alert: <><path d="M12 3 2.8 19h18.4L12 3Z" /><path d="M12 9v4M12 16.5v.1" /></>,
     shield: <><path d="M12 2.8 20 6v5.6c0 4.7-3.2 8.1-8 9.6-4.8-1.5-8-4.9-8-9.6V6l8-3.2Z" /><path d="m8.5 12 2.2 2.2 4.9-5" /></>,
     cube: <><path d="M12 3 20 7.5v9L12 21 4 16.5v-9L12 3Z" /><path d="M4 7.5 12 12l8-4.5M12 12v9" /></>,
+    spark: <><path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6L12 3Z" /><path d="m19 16 .6 2.1L22 19l-2.4.9L19 22l-.6-2.1L16 19l2.4-.9L19 16Z" /></>,
   };
   return <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }

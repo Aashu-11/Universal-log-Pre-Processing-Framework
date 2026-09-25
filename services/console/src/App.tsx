@@ -13,6 +13,7 @@ import { Traceability } from "./pages/Traceability";
 import { ParserWorkbench } from "./pages/ParserWorkbench";
 import { DLQ } from "./pages/DLQ";
 import { ReviewerMode } from "./pages/ReviewerMode";
+import { InvestigationAssistant } from "./pages/InvestigationAssistant";
 
 // Lazy-loaded: pulls in three.js/@react-three/fiber/@react-three/drei
 // (~475KB gzipped), so this cost is only paid by someone who actually
@@ -35,6 +36,7 @@ function ProtectedShell() {
         <Route path="/workbench" element={<ParserWorkbench />} />
         <Route path="/dlq" element={<DLQ />} />
         <Route path="/reviewer" element={<ReviewerMode />} />
+        <Route path="/assistant" element={<InvestigationAssistant />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>

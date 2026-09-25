@@ -43,7 +43,7 @@ export function DLQ() {
         <h1 className="text-[16px] font-semibold text-[var(--color-text)]">Dead Letter Queue</h1>
         {canWrite(role) && selected.size > 0 && (
           <Button variant="primary" onClick={replaySelected} disabled={replaying}>
-            {replaying ? "Replaying…" : `Mark ${selected.size} resolved`}
+            {replaying ? "Replaying…" : `Replay ${selected.size} event${selected.size === 1 ? "" : "s"}`}
           </Button>
         )}
       </div>

@@ -38,6 +38,7 @@ class Settings(BaseSettings):
 
     kafka_brokers: str = "localhost:29092"
     kafka_topic_control_parsers: str = "logkrama.control.parsers"
+    kafka_topic_raw_refs: str = "logkrama.raw.refs"
 
     # /v1/stats/pipeline scrapes these directly (see routers/stats.py). Local
     # dev: the collector/processor run as bare processes on localhost.
@@ -57,6 +58,8 @@ class Settings(BaseSettings):
 
     repo_root: str = str(_REPO_ROOT)
     packs_dir: str = ""  # defaults to <repo_root>/packs if empty
+    ollama_url: str = ""
+    ollama_model: str = "llama3.2"
 
 
 settings = Settings()

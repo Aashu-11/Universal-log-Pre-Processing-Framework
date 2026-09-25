@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.db import SessionLocal, init_db
 from app.routers import (
     auth,
+    assistant,
     dlq,
     events,
     integrity,
@@ -50,6 +51,7 @@ def healthz() -> dict:
 
 
 app.include_router(auth.router)
+app.include_router(assistant.router)
 app.include_router(sources.router)
 app.include_router(parsers.router)
 app.include_router(events.router)
