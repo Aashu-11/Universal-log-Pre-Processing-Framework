@@ -39,9 +39,24 @@ func newPartitionsSyncCmd() *cobra.Command {
 				`CALL vault.system.sync_partition_metadata('logkrama', 'raw_index', 'FULL')`,
 			}
 			for _, stmt := range calls {
-				if _, err := db.Exec(stmt); err != nil {
-					return fmt.Errorf("exec %q: %w", stmt, err)
+				// presto-go-client's database/sql driver never implements
+				// Exec (driverStmt.Exec unconditionally returns
+				// ErrOperationNotSupported — see its presto/presto.go) —
+				// found live running this command for the first time
+				// against a real Presto server: every CALL failed with
+				// "presto: operation not supported" regardless of the SQL
+				// itself. CALL statements still flow through Presto's
+				// ordinary query protocol and return a (typically empty)
+				// result set, so Query works where Exec cannot.
+				rows, err := db.Query(stmt)
+				if err != nil {
+					return fmt.Errorf("query %q: %w", stmt, err)
 				}
+				if err := rows.Err(); err != nil {
+					rows.Close()
+					return fmt.Errorf("query %q: %w", stmt, err)
+				}
+				rows.Close()
 				fmt.Printf("OK: %s\n", stmt)
 			}
 			return nil

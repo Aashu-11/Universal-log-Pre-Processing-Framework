@@ -233,7 +233,7 @@ services:
     networks: [logkrama]
 
   # --- LOGKRAMA's own application layer --------------------------------------
-  # Everything above this line is infrastructure. These six services are
+  # Everything above this line is infrastructure. These seven services are
   # LOGKRAMA's own code, containerized — collector/processor read parser packs,
   # dictionaries and enrichment data as mounted volumes (not baked into the
   # image) so a parser publish (Phase 7) or `logkramactl gen-enrichment` run is
@@ -365,6 +365,51 @@ services:
       KAFKA_BROKERS: kafka:9092
       KAFKA_TOPIC_DLQ: logkrama.dlq
       LOGKRAMA_CONTROL_PLANE_URL: http://control-plane:8000
+    networks: [logkrama]
+
+  # Keeps Presto's view of the vault/lake current without a human running
+  # `logkramactl vault export-index` + `partitions sync` by hand. Found live
+  # (2026-09-28): after the ULPF->LOGKRAMA rename, nobody had re-run these,
+  # so vault.logkrama.raw_segments silently had zero rows and every
+  # Traceability click failed with a real "segment not found" error even
+  # though fresh data existed — see docs/DECISIONS.md. Runs both commands
+  # immediately on start (the loop body executes before its first sleep),
+  # then every 5 minutes; a failed cycle logs and retries next cycle rather
+  # than crashing the container.
+  vault-index-sync:
+    image: logkrama/go:latest
+    container_name: logkrama-vault-index-sync
+    restart: unless-stopped
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+      presto-coordinator:
+        condition: service_healthy
+    environment:
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: logkramaadmin
+      MINIO_SECRET_KEY: logkrama_dev_only
+      MINIO_RAW_BUCKET: logkrama-raw
+      MINIO_USE_SSL: "false"
+      PRESTO_URL: "http://logkrama@presto-coordinator:8080?catalog=lake&schema=logkrama"
+    entrypoint: ["/bin/sh", "-c"]
+    # $$ throughout: docker compose interpolates bare $VAR in the compose
+    # file itself before the container ever sees it (confirmed live — the
+    # first deploy silently blanked every $VAR here, logged as compose
+    # warnings, and --from/--to got empty strings). $$ survives compose's
+    # own substitution pass and reaches the container's /bin/sh as a plain
+    # single $, which then expands normally at runtime.
+    command:
+      - |
+        while true; do
+          TODAY=$$(date -u +%Y-%m-%d)
+          YDAY=$$(date -u -d "@$$(($$(date -u +%s) - 86400))" +%Y-%m-%d)
+          echo "vault-index-sync: exporting segment index $$YDAY..$$TODAY"
+          /app/logkramactl vault export-index --from "$$YDAY" --to "$$TODAY" || echo "vault-index-sync: export-index failed, retrying next cycle"
+          echo "vault-index-sync: syncing partitions"
+          /app/logkramactl partitions sync --presto-url "$$PRESTO_URL" || echo "vault-index-sync: partitions sync failed, retrying next cycle"
+          sleep 300
+        done
     networks: [logkrama]
 
   onboarding:

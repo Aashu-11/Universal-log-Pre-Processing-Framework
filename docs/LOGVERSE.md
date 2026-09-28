@@ -219,11 +219,21 @@ and eventually-responsive regardless of how that gets resolved.
 
 ## Known limitations / follow-ups
 
-- The `stream` Presto catalog issue documented elsewhere in this repo
-  (intermittent `Schema 'logkrama' does not exist` after container-restart
-  churn) doesn't affect LogVerse directly — it doesn't query `stream`, but
-  it's worth knowing the "live stream" destination node is a static label,
-  not a live row count.
+- ~~The `stream` Presto catalog issue...~~ **Fixed 2026-09-28.** Root cause
+  was two real, separate bugs, not container-restart flakiness: (1)
+  PrestoDB 0.286's kafka connector requires `kafka.table-names` set
+  explicitly — `kafka.table-description-dir` alone never auto-discovers
+  tables in this version, unlike Trino's later fork — `deploy/presto/etc/
+  catalog/stream.properties`. (2) The Kafka table description's own `_key`
+  field collided with Presto's reserved internal `_key` column, and its
+  `dataFormat: "varchar"` was invalid for the raw-key decoder — both fixed
+  in `deploy/presto/etc/kafka/logkrama.events_normalized.json` (renamed to
+  `event_key`, dropped the invalid per-field dataFormat). Verified live:
+  `SELECT count(*) FROM stream.logkrama.events_normalized` and the real
+  Explorer Q2 hot+cold UNION both return real rows now. LogVerse doesn't
+  query `stream` directly, so this didn't block it, but the "live stream"
+  route-destination node's label is no longer describing a catalog that's
+  actually broken.
 - WebGL context-loss recovery currently asks the user to reload the page
   rather than attempting an in-place renderer re-initialization.
 - No automated screenshot exists yet (see the README's Screenshots/Demo

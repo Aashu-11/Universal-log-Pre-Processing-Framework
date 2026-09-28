@@ -5,7 +5,7 @@
   "key": {
     "dataFormat": "raw",
     "fields": [
-      { "name": "_key", "dataFormat": "varchar", "type": "VARCHAR", "mapping": "0" }
+      { "name": "event_key", "type": "VARCHAR", "mapping": "0" }
     ]
   },
   "message": {

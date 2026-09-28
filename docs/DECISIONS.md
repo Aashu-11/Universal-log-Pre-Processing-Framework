@@ -2,6 +2,76 @@
 
 One short entry per non-obvious choice, newest first.
 
+## D-021 — Three real, previously-undiagnosed bugs found fixing "Traceability shows key not found" and the long-deferred `stream` catalog
+All found and fixed live on 2026-09-28, triggered by a user report of a real
+"vault unreachable: key not found" error on the Traceability page.
+
+**(1) Hive tables survived the ULPF->LOGKRAMA rename with stale locations.**
+The Postgres-backed Hive Metastore schema was renamed `ulpf` -> `logkrama`,
+carrying its tables along — but `lake.logkrama.events`,
+`vault.logkrama.raw_segments`, and `vault.logkrama.raw_index` kept their
+original `external_location`s pointing at the old `s3a://ulpf-lake/...` /
+`s3a://ulpf-raw/...` buckets, never the new `s3a://logkrama-lake/...` /
+`s3a://logkrama-raw/...` ones `schema/presto/ddl.sql` had already been
+correctly updated to expect. Every "recent event" Presto could see was
+therefore really 18-day-old Sep 8-10 data whose segments no longer exist
+under the new MinIO credentials — a real, reproducible key-not-found, not
+a transient fluke. Fixed by dropping (external tables — metadata only,
+zero underlying data touched) and recreating all three tables exactly per
+`ddl.sql`, then `sync_partition_metadata`. Required `--user ulpf` on the
+DROPs specifically — Hive's authorization checks table ownership by the
+Presto session user, and these tables' `OWNER` column (confirmed directly
+in the `TBLS` Postgres table) was still literally `ulpf` from before the
+rename; the default/`logkrama` session user was denied.
+
+**(2) `vault.logkrama.raw_segments` had zero data because nobody had run
+`logkramactl vault export-index`** since the rename — always a manual/cron
+step (its own `--help` text says so), never actually automated in
+docker-compose.yml. Backfilled with `vault export-index --from 2026-09-23
+--to 2026-09-28`, then added a real fix: a new `vault-index-sync` service
+in docker-compose.yml running both `vault export-index` and
+`partitions sync` in a loop (immediately on start, then every 5 minutes)
+so this class of staleness can't silently recur. Two things had to be
+fixed to make that loop actually work, both found by watching it run for
+real rather than trusting it once written: docker compose interpolates
+bare `$VAR` in a compose file's own `command:` block *before* the
+container ever sees it (confirmed live — `$YDAY`/`$TODAY`/`$PRESTO_URL`
+all silently became empty strings, logged only as compose warnings, not
+container errors) — needed `$$` throughout to survive to the container's
+`/bin/sh`. And `cmd/logkramactl/partitions_cmd.go`'s `sync` subcommand,
+despite existing in the codebase already, had apparently never actually
+been run against a real Presto server before this: it used
+`db.Exec(stmt)`, but `presto-go-client` v1.0.0's `driverStmt.Exec`
+unconditionally returns `ErrOperationNotSupported` (confirmed directly in
+the vendored source, `presto/presto.go`) — every `CALL
+system.sync_partition_metadata(...)` failed with "presto: operation not
+supported" regardless of the SQL. `CALL` statements still flow through
+Presto's normal query protocol and return a (typically empty) result set,
+so switching to `db.Query(stmt)` (draining and closing the rows) fixed it.
+
+**(3) The `stream` Presto catalog** — deferred as "root cause not yet
+isolated" earlier in this project's history and blamed on
+"container-restart churn" — was actually two config bugs, unrelated to
+restarts, that a plain restart could never have fixed: PrestoDB 0.286's
+kafka connector (the Facebook-maintained fork this stack pins, not
+Trino's later one) does not auto-discover tables from
+`kafka.table-description-dir` alone — confirmed via the connector's own
+startup log line `kafka.table-names   []   []` — it only builds metadata
+for tables also explicitly listed in `kafka.table-names`, which was never
+set. And separately, the table description JSON's own key field was
+named `_key`, colliding with Presto Kafka connector's reserved internal
+`_key` column (real error: "Multiple entries with same key"), and that
+field's `"dataFormat": "varchar"` was invalid for the `raw` key codec's
+decoder (real error: "invalid dataFormat 'varchar' for column
+'event_key'") once the name collision was fixed. Fixed by setting
+`kafka.table-names=logkrama.events_normalized` in
+`deploy/presto/etc/catalog/stream.properties`, renaming the key field to
+`event_key`, and dropping its invalid per-field `dataFormat` (the column's
+`"type": "VARCHAR"` alone is sufficient). Verified live: `SELECT count(*)
+FROM stream.logkrama.events_normalized` and the real Explorer Q2 hot+cold
+UNION query both return real rows — the first time this catalog has
+actually worked in this project's history, not just since the rename.
+
 ## D-020 — LogVerse: reused endpoints, no SSE, Html labels not drei Text, derived (not inventoried) assets
 Building the 3D "LogVerse" console page surfaced four choices worth
 recording. (1) **No new backend endpoint.** Every data source it needs
