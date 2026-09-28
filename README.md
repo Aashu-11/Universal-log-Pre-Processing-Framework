@@ -91,6 +91,7 @@ scorer reads fields the earlier stages set.
 - JSON-Schema validation against the embedded `schema/ues-1.0.json`, plus port range, IP parseability and ±1-year timestamp-skew checks.
 - `quality.score = (mapped_fields / expected_fields) × parse_confidence`, clamped to `[0,1]`.
 - Router writes **every** event to the lake and the live stream regardless of outcome; violations *additionally* get a DLQ copy tagged with a reason code and bump `logkrama_dlq_total{reason}`.
+- The `logkrama-dlq-bridge` service consumes the DLQ Kafka topic and forwards each entry to `POST /v1/dlq`, so it lands durably in Postgres — without it, DLQ violations exist only as ephemeral Kafka messages and the console's DLQ page stays permanently empty.
 
 ### Query (PrestoDB federation)
 Four catalogs, one SQL dialect:
@@ -105,6 +106,12 @@ Four catalogs, one SQL dialect:
 Seven documented demo queries (`docs/QUERIES.md`, Q1–Q7) cover cross-vendor visibility, hot+cold
 `UNION ALL`, a three-catalog join, chain-of-custody traceability, a losslessness proof, parser-health
 regression detection, and ML feature extraction — all pre-loaded in the console's Explorer page.
+
+New `dt=`/`hour=`/`vendor=` partitions and vault segment-index rows aren't visible to Presto until
+someone registers them (Hive's connector doesn't auto-discover them). `logkramactl vault export-index`
++ `partitions sync` do that; the `vault-index-sync` service runs both on a 5-minute loop automatically
+so this never needs a human — see `docs/DECISIONS.md` D-021 for the real incident that made this
+worth automating.
 
 ### Control Plane (FastAPI)
 JWT auth with four RBAC roles (`admin`, `engineer`, `analyst`, `auditor` — read-only), full audit log,
@@ -135,11 +142,12 @@ returned (template coverage, per-field success rate) comes from actually executi
 parser through the Go engine.
 
 ### Console (React + TypeScript)
-Eight authenticated pages plus a login screen:
+Nine authenticated pages plus a login screen:
 
 | Page | What it does |
 |---|---|
 | **Live Theater** | Walks a single live event through all eight pipeline stages, one provable step at a time |
+| **LogVerse** | A navigable 3D scene of the live pipeline — real sources, events as particles flying between the eight stages, the Raw Vault's Merkle chain as linked blocks, a DLQ branch. Click any particle → **Trace Event** rewinds it backward through every stage it reached, ending at its raw bytes' SHA-256 + Merkle proof. Live/pause/replay timeline, severity/vendor filters, a no-WebGL fallback. See `docs/LOGVERSE.md`. |
 | **Pipeline** | Rolling 2-minute EPS / bytes / drops / DLQ charts from real Prometheus counters |
 | **Sources** | Source inventory and binding management |
 | **Explorer** | Federated SQL console with the four catalogs and Q1–Q7 pre-loaded |
@@ -216,19 +224,27 @@ INGEST → PRESERVE → IDENTIFY → PARSE → NORMALIZE → ENRICH → VALIDATE
                           └──┬──────────┬──────────┬─────┘
                              │          │          │
                   Parquet ───┘          │          └─── DLQ topic
-                  (logkrama-lake)     normalized topic
-                             │          │          │
-                       ┌─────▼──────────▼──────────▼─────┐
-                       │  PrestoDB  lake · stream · meta │
-                       │            · vault             │
-                       └─────┬───────────────────────────┘
-                             │
+                  (logkrama-lake)     normalized topic      │
+                             │          │           ┌───────▼────────┐
+                             │          │           │ logkrama-dlq-   │
+                             │          │           │ bridge          │
+                             │          │           └───────┬────────┘
+                             │          │                   │ POST /v1/dlq
+                       ┌─────▼──────────▼───────────────────▼─────┐
+                       │  PrestoDB  lake · stream · meta · vault  │
+                       └─────┬─────────────────────────────────────┘
+                             │      ▲
+                             │      │ export-index + partitions sync, every 5min
+                             │  ┌───┴────────────┐
+                             │  │ vault-index-sync│
+                             │  └─────────────────┘
         ┌────────────────────▼─────────┐   ┌─────────────────────┐
         │ control-plane (FastAPI/JWT)  │◄──│ onboarding (Drain3) │
         └────────────────┬─────────────┘   └─────────────────────┘
                          │
                ┌─────────▼─────────┐
                │ console (React)   │
+               │ incl. LogVerse 3D │
                └───────────────────┘
 ```
 
@@ -285,9 +301,13 @@ make certs
 make up          # docker compose up -d --build, then waits for healthchecks
 ```
 
-This starts 12 long-running services (Postgres, MinIO, Kafka in KRaft mode, Hive Metastore, Presto,
-Prometheus, Grafana, collector, processor, control-plane, onboarding, console) plus two one-shot
-init jobs that create the MinIO buckets and Kafka topics.
+This starts 14 long-running services — 7 infrastructure (Postgres, MinIO, Kafka in KRaft mode, Hive
+Metastore, Presto, Prometheus, Grafana) and 7 that are LOGKRAMA's own code (collector, processor,
+control-plane, onboarding, console, the **DLQ bridge** — without it, `logkrama.dlq` Kafka messages
+never reach Postgres and the DLQ console page stays empty — and **`vault-index-sync`**, which
+runs `logkramactl vault export-index` + `partitions sync` on a 5-minute loop so new segments and
+Parquet partitions become queryable without a human running those by hand) — plus two one-shot init
+jobs that create the MinIO buckets and Kafka topics.
 
 | Service | URL | Credentials |
 |---|---|---|
@@ -377,7 +397,21 @@ go run ./tools/loggen --proto=tcp  --port=6601 --eps=20000 --duration=60s --vend
 go run ./tools/loggen --proto=udp  --port=5514 --eps=5000  --vendors=paloalto,fortinet
 go run ./tools/loggen --proto=http --port=8088 --eps=1000
 go run ./tools/loggen --proto=tcp  --port=6601 --anomaly=port-scan     # feeds the Q7 demo
+
+# Continuous — --duration=0 (or any value <= 0) runs forever instead of
+# stopping after a fixed window, until you Ctrl+C or SIGTERM it. Useful for
+# keeping a demo/console continuously fed rather than sending one batch.
+# sonicwall is never part of `all` (see below) — list it explicitly if you
+# want it included in the continuous mix.
+go run ./tools/loggen --proto=http --host=127.0.0.1 --port=8088 \
+  --vendors=paloalto,fortinet,cisco,sonicwall --eps=60 --malformed-rate=0.02 --duration=0
 ```
+
+`--malformed-rate` (0–1) corrupts that fraction of events with a genuinely
+out-of-range port or invalid IP — sitting inside an otherwise well-formed
+line, so it parses fine and is only caught by real `VALIDATE`-stage checks.
+Use it to keep the DLQ page non-empty during a demo without ever hand-crafting
+"fake" bad data — every DLQ row it produces is a real validation failure.
 
 ### Operator CLI — `logkramactl`
 
@@ -490,7 +524,7 @@ push and PR.
 ├── services/
 │   ├── control-plane/        # FastAPI: auth, sources, parsers, events, integrity, dlq, stats, query, reviewer
 │   ├── onboarding/           # FastAPI + Drain3: templates, type/name inference, draftgen, importers
-│   └── console/              # React + TS + Vite + Tailwind (8 pages)
+│   └── console/              # React + TS + Vite + Tailwind (9 pages incl. LogVerse 3D)
 ├── tools/
 │   ├── loggen/               # multi-protocol load generator
 │   ├── gen-corpus/           # golden-fixture corpus generator
@@ -507,6 +541,16 @@ push and PR.
 
 ## Screenshots / Demo
 
-<!-- TODO: add a LogVerse screenshot here (console → LogVerse, live scene with a few particles in flight) once captured from a running stack. Not committed yet — see docs/LOGVERSE.md for the feature writeup and demo flow in the meantime. -->
+All captured live from a running stack with real data — no mockups, no staged content
+(`docs/screenshots/`, taken via a real headless-Chromium session against `localhost:5173`).
+
+| | |
+|---|---|
+| **Login** — the identity gateway | ![Login](docs/screenshots/01-login.png) |
+| **Live Theater** — real events walked through all 8 stages, nothing to click | ![Live Theater](docs/screenshots/02-live-theater.png) |
+| **LogVerse** — the 3D forensic graph: real events, real vendors, real risk/DLQ state | ![LogVerse](docs/screenshots/03-logverse.png) |
+| **Traceability** — one real event's full journey, PRESERVE through ROUTE, SHA-256 verified | ![Traceability](docs/screenshots/04-traceability.png) |
+| **Explorer** — federated SQL across all four Presto catalogs, Q1–Q7 pre-loaded | ![Explorer](docs/screenshots/05-explorer.png) |
+| **Pipeline** — live throughput while `loggen` is actually sending traffic | ![Pipeline](docs/screenshots/06-pipeline.png) |
 
 ---
