@@ -7,6 +7,7 @@ volumes:
   minio-data:
   kafka-data:
   grafana-data:
+  ollama-data:
 
 services:
   # --- Metadata + Hive Metastore backing store -----------------------------
@@ -232,6 +233,45 @@ services:
       retries: 10
     networks: [logkrama]
 
+  # --- Local LLM runtime, optional (Investigation Assistant) ---------------
+  # ollama/ollama — MIT, no account/signup, runs fully locally once a model
+  # is pulled. The control plane's assistant.py already returns a real
+  # deterministic (non-LLM) analysis whenever LOGKRAMA_OLLAMA_URL is unset
+  # or this service is unreachable, so it stays a genuinely optional
+  # enhancement, not a hard dependency — air-gapped operation is unaffected
+  # if this is never started.
+  ollama:
+    image: ollama/ollama:latest
+    container_name: logkrama-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama-data:/root/.ollama
+    ports:
+      - "11434:11434"
+    healthcheck:
+      # The official image has neither wget nor curl — use the bundled CLI,
+      # which talks to the same local API, instead of an HTTP probe.
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [logkrama]
+
+  # One-shot: pulls the model once (cached in ollama-data afterward, so this
+  # is a no-op on every later `docker compose up`). Not on control-plane's
+  # depends_on — the first pull can take a while and the assistant already
+  # degrades gracefully, so app startup is never blocked waiting on it.
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: logkrama-ollama-init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - "OLLAMA_HOST=ollama:11434 ollama pull gemma3:1b && echo 'gemma3:1b ready'"
+    networks: [logkrama]
+
   # --- LOGKRAMA's own application layer --------------------------------------
   # Everything above this line is infrastructure. These seven services are
   # LOGKRAMA's own code, containerized — collector/processor read parser packs,
@@ -335,6 +375,13 @@ services:
       LOGKRAMA_REPO_ROOT: /app
       LOGKRAMA_COLLECTOR_METRICS_URL: http://logkrama-collector:9100/metrics
       LOGKRAMA_PROCESSOR_METRICS_URL: http://logkrama-processor:9101/metrics
+      # Points at the host's native Ollama install (not the ollama/ollama-init
+      # compose services below, which are unused while a native install is
+      # active) — host.docker.internal reaches the Windows/Mac host from
+      # inside a container. On native Linux Docker, replace with the host's
+      # actual LAN/bridge IP.
+      LOGKRAMA_OLLAMA_URL: http://host.docker.internal:11434
+      LOGKRAMA_OLLAMA_MODEL: gemma3:1b
     volumes:
       - ./packs:/app/packs
       - ./testdata:/app/testdata:ro

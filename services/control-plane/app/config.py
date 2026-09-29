@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     repo_root: str = str(_REPO_ROOT)
     packs_dir: str = ""  # defaults to <repo_root>/packs if empty
     ollama_url: str = ""
-    ollama_model: str = "llama3.2"
+    ollama_model: str = "gemma3:1b"
 
 
 settings = Settings()

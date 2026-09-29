@@ -2,6 +2,59 @@
 
 One short entry per non-obvious choice, newest first.
 
+## D-023 — Switched the Investigation Assistant's local model to a natively-installed `gemma3:1b`
+Superseding parts of D-022 below. Two changes, both from explicit user direction:
+
+**(1) Model swapped from `phi3:latest` (~2GB) to `gemma3:1b` (~815MB).** Smaller footprint, same
+air-gap/no-signup contract — still a plain local Ollama pull, nothing account-gated. Updated
+everywhere the old model name was pinned: `services/control-plane/app/config.py`'s
+`ollama_model` default, `.env.example`, `docker-compose.yml` (`control-plane`'s env block and the
+still-present-but-now-secondary `ollama-init` service's pull command).
+
+An explicitly *rejected* alternative worth recording: the user initially asked for
+`gemma4:31b-cloud` (an Ollama Cloud model). Declined — `-cloud` models route inference through
+Ollama's hosted API, which requires an Ollama account and sends data over the internet at runtime,
+violating both the air-gap constraint (zero outbound calls) and the no-account-signup licensing
+rule. Flagged this explicitly rather than silently substituting; user agreed and asked for the
+smallest sensible local model instead.
+
+**(2) Ollama runs as a native host install, not the `docker compose`-managed `ollama` container.**
+The containerized `ollama`/`ollama-init` services from D-022 hit a real bug during verification —
+the official `ollama/ollama` image has neither `wget` nor `curl`, so the original HTTP-based
+healthcheck could never succeed, which would have permanently blocked `ollama-init`'s
+`depends_on: condition: service_healthy`. Fixed at the time by switching the healthcheck to
+`ollama list` (the bundled CLI talking to the same local API) — that fix is still in place and the
+containerized path still works if anyone prefers it. But the user then chose to delete the
+`ollama/ollama:latest` image and containers and install Ollama natively on the host instead.
+`control-plane`'s `LOGKRAMA_OLLAMA_URL` now points at `http://host.docker.internal:11434` (the
+Docker Desktop hostname that reaches the host machine from inside a container) rather than
+`http://ollama:11434`. The `ollama`/`ollama-init` compose services are left defined, unused by
+default, for anyone who'd rather containerize it — flip the URL back to `http://ollama:11434` and
+bring those two services up instead.
+
+## D-022 — Ollama added as an optional, local-only LLM for the Investigation Assistant
+The Investigation Assistant page (`services/console/src/pages/InvestigationAssistant.tsx`,
+`services/control-plane/app/routers/assistant.py`) was already built to a genuinely air-gap-safe
+contract before this decision: `analyze()` always computes and can always return a real
+deterministic, rule-based analysis (syslog/JSON/KV shape detection, field-name hints), and only
+*additionally* calls out to `settings.ollama_url` — empty by default — to enrich that summary if a
+local endpoint is configured and actually reachable; any failure there is caught and silently falls
+back to the deterministic result. Nothing about this page's correctness depended on Ollama existing.
+
+What this decision adds is actually standing that optional endpoint up: `ollama/ollama:latest`
+(MIT, no signup) as a new `ollama` service in `docker-compose.yml`, plus a one-shot `ollama-init`
+service that runs `ollama pull phi3:latest` once (cached in the `ollama-data` volume afterward, so
+every later `docker compose up` is instant). `phi3:latest` specifically per explicit request — a
+~2GB model, small enough to pull and run on commodity hardware while still being genuinely useful
+for this page's job (log-line triage summaries), unlike the 4B+ models that would make first-run
+setup painfully slow on a laptop.
+
+Deliberately **not** on `control-plane`'s `depends_on`: the first pull takes a while, and since the
+assistant already degrades gracefully, there's no reason to block control-plane's (or anything else
+in the stack's) startup on it. `LOGKRAMA_OLLAMA_URL=http://ollama:11434` /
+`LOGKRAMA_OLLAMA_MODEL=phi3:latest` are the only two control-plane env vars this adds — everything
+else about the feature was already in place.
+
 ## D-021 — Three real, previously-undiagnosed bugs found fixing "Traceability shows key not found" and the long-deferred `stream` catalog
 All found and fixed live on 2026-09-28, triggered by a user report of a real
 "vault unreachable: key not found" error on the Traceability page.

@@ -142,7 +142,7 @@ returned (template coverage, per-field success rate) comes from actually executi
 parser through the Go engine.
 
 ### Console (React + TypeScript)
-Nine authenticated pages plus a login screen:
+Ten authenticated pages plus a login screen:
 
 | Page | What it does |
 |---|---|
@@ -153,7 +153,8 @@ Nine authenticated pages plus a login screen:
 | **Explorer** | Federated SQL console with the four catalogs and Q1–Q7 pre-loaded |
 | **Traceability** | Click any recent event → raw bytes (hex or text), SHA-256 verification, Merkle proof |
 | **Parser Workbench** | Paste a sample → analyze → live re-parse → publish |
-| **DLQ** | Group by reason, inspect, bulk-resolve |
+| **DLQ** | Group by reason, inspect, replay (one event at a time, with live per-event progress), bulk-resolve |
+| **Investigation Assistant** | Paste an unfamiliar log line, get parser/field hints and next steps. Always returns a real deterministic offline analysis; if `LOGKRAMA_OLLAMA_URL` points at a local Ollama instance it's used to enrich the summary — nothing ever leaves the machine either way |
 | **Reviewer Mode** | One "Prove it" button per requirement (a)–(k), each wired to a real backend check |
 
 ### Observability
@@ -304,23 +305,44 @@ make up          # docker compose up -d --build, then waits for healthchecks
 This starts 14 long-running services — 7 infrastructure (Postgres, MinIO, Kafka in KRaft mode, Hive
 Metastore, Presto, Prometheus, Grafana) and 7 that are LOGKRAMA's own code (collector, processor,
 control-plane, onboarding, console, the **DLQ bridge** — without it, `logkrama.dlq` Kafka messages
-never reach Postgres and the DLQ console page stays empty — and **`vault-index-sync`**, which
-runs `logkramactl vault export-index` + `partitions sync` on a 5-minute loop so new segments and
-Parquet partitions become queryable without a human running those by hand) — plus two one-shot init
-jobs that create the MinIO buckets and Kafka topics.
+never reach Postgres and the DLQ console page stays empty — and **`vault-index-sync`**, which runs
+`logkramactl vault export-index` + `partitions sync` on a 5-minute loop so new segments and Parquet
+partitions become queryable without a human running those by hand) — plus two one-shot init jobs:
+creating the MinIO buckets and creating the Kafka topics.
 
-| Service | URL | Credentials |
+**Ollama** (optional, local-only LLM runtime for the Investigation Assistant page — everything else
+works fine without it) is *not* run via Docker by default: install it natively
+(https://ollama.com/download) and run `ollama pull gemma3:1b` (~815MB, small enough for commodity
+hardware). `control-plane`'s `LOGKRAMA_OLLAMA_URL` points at
+`http://host.docker.internal:11434`, which reaches the host's native Ollama from inside the
+container. A containerized alternative (`ollama` / `ollama-init` services) is still defined in
+`docker-compose.yml` for anyone who'd rather not install natively — point `LOGKRAMA_OLLAMA_URL` back
+at `http://ollama:11434` and bring those two services up if you use it instead.
+
+| Service | URL / host:port | Credentials |
 |---|---|---|
 | Console | http://localhost:5173 | `admin` / `admin` |
-| Control API (OpenAPI docs) | http://localhost:8000/docs | JWT via `/v1/auth/login` |
+| Control API (OpenAPI docs) | http://localhost:8000/docs | JWT via `/v1/auth/login` (`admin` / `admin`) |
 | Onboarding API | http://localhost:8001/docs | — |
-| Presto UI | http://localhost:8080 | — |
-| MinIO console | http://localhost:9001 | `logkramaadmin` / `logkrama_dev_only` |
-| Grafana | http://localhost:3000 | anonymous viewer |
+| Presto UI / SQL (`presto-cli --server localhost:8080`) | http://localhost:8080 | no auth enforced — any `--user` value works for queries. `DROP`/`CREATE TABLE` on a pre-existing table is owner-checked though (`docs/DECISIONS.md` D-021) |
+| MinIO console (browser) | http://localhost:9001 | `logkramaadmin` / `logkrama_dev_only` |
+| MinIO S3 API (any S3 client/SDK, e.g. `mc`, `logkramactl`) | http://localhost:9000 | `logkramaadmin` / `logkrama_dev_only` (same root user) |
+| **Postgres** (`psql`, DBeaver, etc.) | `localhost:5433` | user `logkrama` / `logkrama_dev_only`, db `logkrama_meta` |
+| Kafka (any local Kafka client, e.g. `kafka-console-consumer`) | `localhost:29092` | no auth (PLAINTEXT) |
+| Grafana | http://localhost:3000 | anonymous viewer, or `admin` / `logkrama_dev_only` to edit |
 | Prometheus | http://localhost:9090 | — |
+| Ollama API (optional — Investigation Assistant; native install) | http://localhost:11434 | no auth; serves `gemma3:1b` once you've run `ollama pull gemma3:1b` |
 
 > All credentials in `.env.example` and `docker-compose.yml` are dev-only placeholders. Change them
 > before any non-local deployment, and set `LOGKRAMA_JWT_SECRET` / `LOGKRAMA_ADMIN_PASSWORD`.
+
+> **Gotcha — Postgres port 5433, not 5432**: on a machine that also runs its own native PostgreSQL
+> install/service, that service silently wins the standard port 5432 before Docker's Postgres
+> container can bind it, so this stack maps its Postgres to the host on **5433** instead
+> (`docker-compose.yml`). Container-to-container traffic — Presto's `meta` catalog, Hive Metastore,
+> the control plane — is unaffected; it talks to the `postgres` service over the internal Docker
+> network on its normal 5432 regardless. This only matters for a client running directly on your
+> host machine (`psql`, DBeaver, …) — use 5433 there.
 
 ### 3. Apply the Presto DDL
 
